@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 import re
+from Oracle import Oracle
 
 class Board():
     empty = 0
@@ -18,6 +19,8 @@ class Board():
         self.printer = Reprinter()
 
         self.frame = 0
+
+        self.oracle = Oracle()
 
         self.snakes = []
         for _ in range(num_snakes):
@@ -99,22 +102,49 @@ class Snake():
     head = 255
 
     def __init__(self, board):
+        self.is_helpless = False # All snakes consult the Oracle.
+
         self.board = board # Snake's board.
         self.dots = [board.find_empty_point()] # Assume that head is the last point.
+        # The length of the small square (defines the limited landscape).
+        # If it's set to 5, then the size of the Q-domain space is (at most) 33,554,432.
+        self.sight_length = 5 # Always make it odd to center the snake's head.
         for x, y in self.dots:
             board.points[x][y] = self.body
+
+        self.oracle = board.oracle # Every snakes gets access to the same Oracle.
+
+    def get_small_square(self):
+        return Snake._get_small_square(self.dots[-1], (self.sight_length-1)//2, self.board.points)
+
+    @staticmethod
+    def _get_small_square(position, square_radius, points):
+        x, y = position
+
+        # Handle borders and corners (the small square just becomes smaller).
+        left = x-square_radius if x-square_radius >= 0 else 0
+        right = x+square_radius if x+square_radius < len(points) else len(points)-1
+        top = y - square_radius if y - square_radius >= 0 else 0
+        bottom = y + square_radius if y + square_radius < len(points) else len(points) - 1
+
+        small_square = points[top:bottom+1, left:right+1].copy()
+
+        return small_square
 
     def find_moves(self):
         head = self.dots[-1]
         moves = []
+        relative_moves = []
         for delta_x in [-1, 1]:
             for delta_y in [-1, 1]:
                 new_x, new_y = head[0] + delta_x, head[1] + delta_y
                 if self.board.is_point_empty(new_x, new_y):
                     moves.append((new_x, new_y, 0)) # 0 indicates we do not eat anything.
+                    relative_moves.append((delta_x, delta_y, 0))
                 elif self.board.is_point_fruit(new_x, new_y):
                     moves.append((new_x, new_y, 1)) # 1 indicates we are eating the fruit at this point.
-        return moves
+                    relative_moves.append((delta_x, delta_y, 1))
+        return moves, relative_moves
 
     def move(self, new_x, new_y, action):
         assert self.dots[-1] != (new_x, new_y)
@@ -139,16 +169,28 @@ class Snake():
             self.board.points[head[0]][head[1]] = self.head
 
     def tick(self):
-        moves = self.find_moves()
+        moves, relative_moves = self.find_moves()
 
-        if len(moves) == 0:
-            self.die()
-            return
+        if self.is_helpless: # Helpless snakes move randomly (this was used in testing).
+            if len(moves) == 0:
+                self.die()
+                return
 
-        # This is where we would consult artificial intelligence, but
-        # we just move randomly for now.
-        new_x, new_y, action = moves[np.random.randint(0, len(moves))]
-        self.move(new_x, new_y, action)
+            new_x, new_y, action = moves[np.random.randint(0, len(moves))]
+            self.move(new_x, new_y, action)
+
+        else: # Non-helpless snakes consult the Oracle.
+            small_square = self.get_small_square()
+            # Gives back the Oracle's pick from the moves
+            # or None if the snake is destined to die.
+            move_index = self.oracle.consult(small_square, relative_moves)
+
+            if move_index is None:
+                self.die()
+                return
+
+            new_x, new_y, action = moves[move_index]
+            self.move(new_x, new_y, action)
 
     def die(self):
         i = self.board.snakes.index(self)
