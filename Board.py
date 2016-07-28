@@ -6,9 +6,11 @@ from Oracle import Oracle
 class Board():
     empty = 0
     occupied = 255
-    value_to_character = {empty: ' ', occupied: '*'}
+    fruit = 240
+    head = 230
+    value_to_character = {empty: ' ', occupied: '*', fruit: '@', head: '&'}
 
-    def __init__(self, length=30, num_snakes=1):
+    def __init__(self, length=30, num_snakes=1, are_snakes_helpless=False):
         self.points = [[self.occupied]*(length + 2)]
         self.points += [[self.occupied] + [self.empty]*length + [self.occupied] for _ in range(length)]
         self.points += [[self.occupied]*(length + 2)]
@@ -22,9 +24,15 @@ class Board():
 
         self.oracle = Oracle()
 
+        self.are_snakes_helpless = are_snakes_helpless
+
+        self.initial_num_snakes = num_snakes
+
         self.snakes = []
-        for _ in range(num_snakes):
+        for _ in range(self.initial_num_snakes):
             self.snakes.append(Snake(self))
+
+        self.lengths_of_dead_snakes = []
 
         self.fruits = {} # Maps points to where the fruit is located.
 
@@ -60,8 +68,8 @@ class Board():
         # Let's update the fruit in a totally random fashion.
 
         if len(self.snakes) > 0:
-            # We want to keep about twice as many fruit on screen as there are snakes.
-            if 2*len(self.fruits) < len(self.snakes):
+            ## We want to keep about twice as many fruit on screen as there are snakes.
+            if len(self.fruits) < len(self.snakes)*2:
                 if self.frame % 5 == 0:
                     fruit = Fruit(self)
                     self.fruits[fruit.root] = fruit
@@ -77,6 +85,8 @@ class Board():
                     else:
                         fruit = Fruit(self)
                         self.fruits[fruit.root] = fruit
+            if self.initial_num_snakes > len(self.snakes):
+                self.snakes.append(Snake(self))
 
         self.frame += 1
 
@@ -86,7 +96,7 @@ class Board():
         self.printer.reprint(text)
 
 class Fruit():
-    body = 255
+    body = 240
 
     def __init__(self, board):
         self.board = board # Fruit's board.
@@ -99,20 +109,23 @@ class Fruit():
 
 class Snake():
     body = 255
-    head = 255
+    head = 230
 
     def __init__(self, board):
-        self.is_helpless = False # All snakes consult the Oracle.
+        self.is_helpless = board.are_snakes_helpless
 
         self.board = board # Snake's board.
         self.dots = [board.find_empty_point()] # Assume that head is the last point.
         # The length of the small square (defines the limited landscape).
         # If it's set to 5, then the size of the Q-domain space is (at most) 33,554,432.
-        self.sight_length = 5 # Always make it odd to center the snake's head.
+        self.sight_length = 7 # Always make it odd to center the snake's head.
         for x, y in self.dots:
             board.points[x][y] = self.body
 
         self.oracle = board.oracle # Every snakes gets access to the same Oracle.
+
+        self.last_small_square = np.array([0])
+        self.last_relative_move = (0, 0, 0)
 
     def get_small_square(self):
         return Snake._get_small_square(self.dots[-1], (self.sight_length-1)//2, self.board.points)
@@ -152,6 +165,9 @@ class Snake():
             tail = self.dots[0]
             self.board.points[tail[0]][tail[1]] = self.board.empty
 
+            if len(self.dots) > 1:
+                head = self.dots[-1]
+                self.board.points[head[0]][head[1]] = self.body
             self.dots.append((new_x, new_y))
             self.dots = self.dots[1:] # Possibly something to optimize.
             head = self.dots[-1]
@@ -183,16 +199,21 @@ class Snake():
             small_square = self.get_small_square()
             # Gives back the Oracle's pick from the moves
             # or None if the snake is destined to die.
-            move_index = self.oracle.consult(small_square, relative_moves)
+            move_index = self.oracle.consult(small_square, relative_moves,
+                                             self.last_small_square, self.last_relative_move)
 
             if move_index is None:
                 self.die()
                 return
 
             new_x, new_y, action = moves[move_index]
+            self.last_small_square = small_square
+            self.last_relative_move = (new_x, new_y, action)
+
             self.move(new_x, new_y, action)
 
     def die(self):
+        self.board.lengths_of_dead_snakes.append(len(self.dots))
         i = self.board.snakes.index(self)
         for dot in self.dots:
             self.board.points[dot[0]][dot[1]] = self.board.empty
