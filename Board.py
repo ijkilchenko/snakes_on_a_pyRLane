@@ -85,8 +85,8 @@ class Board():
                     else:
                         fruit = Fruit(self)
                         self.fruits[fruit.root] = fruit
-            if self.initial_num_snakes > len(self.snakes):
-                self.snakes.append(Snake(self))
+        if self.initial_num_snakes > len(self.snakes):
+            self.snakes.append(Snake(self))
 
         self.frame += 1
 
@@ -118,11 +118,11 @@ class Snake():
         self.dots = [board.find_empty_point()] # Assume that head is the last point.
         # The length of the small square (defines the limited landscape).
         # If it's set to 5, then the size of the Q-domain space is (at most) 33,554,432.
-        self.sight_length = 7 # Always make it odd to center the snake's head.
+        self.sight_length = 5 # Always make it odd to center the snake's head.
         for x, y in self.dots:
             board.points[x][y] = self.body
 
-        self.oracle = board.oracle # Every snakes gets access to the same Oracle.
+        self.oracle = board.oracle # Every snake gets access to the same Oracle.
 
         self.last_small_square = np.array([0])
         self.last_relative_move = (0, 0, 0)
@@ -132,13 +132,24 @@ class Snake():
 
     @staticmethod
     def _get_small_square(position, square_radius, points):
-        x, y = position
+        y, x = position
+
+        legal_radius = square_radius
+        if x-square_radius < 0:
+            legal_radius = x
+        elif x+square_radius >= len(points):
+            legal_radius = len(points)-x
+
+        if y - square_radius < 0:
+            legal_radius = min(legal_radius, x)
+        elif y + square_radius >= len(points):
+            legal_radius = min(legal_radius, len(points) - x)
 
         # Handle borders and corners (the small square just becomes smaller).
-        left = x-square_radius if x-square_radius >= 0 else 0
-        right = x+square_radius if x+square_radius < len(points) else len(points)-1
-        top = y - square_radius if y - square_radius >= 0 else 0
-        bottom = y + square_radius if y + square_radius < len(points) else len(points) - 1
+        left = x-legal_radius
+        right = x+legal_radius
+        top = y-legal_radius
+        bottom = y+legal_radius
 
         small_square = points[top:bottom+1, left:right+1].copy()
 
@@ -146,17 +157,17 @@ class Snake():
 
     def find_moves(self):
         head = self.dots[-1]
-        moves = []
+        moves = [] # Absolute moves.
         relative_moves = []
-        for delta_x in [-1, 1]:
-            for delta_y in [-1, 1]:
-                new_x, new_y = head[0] + delta_x, head[1] + delta_y
-                if self.board.is_point_empty(new_x, new_y):
-                    moves.append((new_x, new_y, 0)) # 0 indicates we do not eat anything.
-                    relative_moves.append((delta_x, delta_y, 0))
-                elif self.board.is_point_fruit(new_x, new_y):
-                    moves.append((new_x, new_y, 1)) # 1 indicates we are eating the fruit at this point.
-                    relative_moves.append((delta_x, delta_y, 1))
+        for delta_x, delta_y in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            new_x, new_y = head[0] + delta_x, head[1] + delta_y
+            if self.board.is_point_empty(new_x, new_y):
+                moves.append((new_x, new_y, 0)) # 0 indicates we do not eat anything.
+                relative_moves.append((delta_x, delta_y, 0))
+            elif self.board.is_point_fruit(new_x, new_y):
+                moves.append((new_x, new_y, 1)) # 1 indicates we are eating the fruit at this point.
+                relative_moves.append((delta_x, delta_y, 1))
+            # Could have another condition here eventually so leaving the elif above.
         return moves, relative_moves
 
     def move(self, new_x, new_y, action):
@@ -193,10 +204,11 @@ class Snake():
                 return
 
             new_x, new_y, action = moves[np.random.randint(0, len(moves))]
-            self.move(new_x, new_y, action)
 
         else: # Non-helpless snakes consult the Oracle.
-            small_square = self.get_small_square()
+            # TODO: Should the small square be rotated so that the previous
+            # move always points to the top of the small square?
+            small_square = self.get_small_square() # This is the current state.
             # Gives back the Oracle's pick from the moves
             # or None if the snake is destined to die.
             move_index = self.oracle.consult(small_square, relative_moves,
@@ -207,10 +219,10 @@ class Snake():
                 return
 
             new_x, new_y, action = moves[move_index]
-            self.last_small_square = small_square
-            self.last_relative_move = (new_x, new_y, action)
+            self.last_small_square = small_square # Last state.
+            self.last_relative_move = relative_moves[move_index] # Last Q-learning action.
 
-            self.move(new_x, new_y, action)
+        self.move(new_x, new_y, action)
 
     def die(self):
         self.board.lengths_of_dead_snakes.append(len(self.dots))

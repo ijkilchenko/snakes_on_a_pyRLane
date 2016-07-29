@@ -39,7 +39,7 @@ class TestBoard(unittest.TestCase):
         board = Board(15, 1) # Board with 1 snake.
         board.print()
 
-        board = Board(15, 2)  # Board with 1 snake.
+        board = Board(15, 2) # Board with 2 snakes.
         board.print()
 
     def test_tick_snake(self):
@@ -50,6 +50,7 @@ class TestBoard(unittest.TestCase):
         self.assertNotEqual(snake_start, snake_end)
 
 class TestSnake(unittest.TestCase):
+
     def test_get_small_square(self):
         A = np.array([[1, 1, 1, 2, 2],
                       [1, 2, 3, 5, 5],
@@ -61,11 +62,15 @@ class TestSnake(unittest.TestCase):
         self.assertTrue((small_square_1 == A).all())
 
         small_square_2 = Snake._get_small_square((1, 1), 2, A)
-        expected_small_square_2 = np.array([[1, 1, 1, 2],
-                                            [1, 2, 3, 5],
-                                            [4, 5, 6, 7],
-                                            [1, 5, 6, 8]])
+        expected_small_square_2 = np.array([[1, 1, 1],
+                                            [1, 2, 3],
+                                            [4, 5, 6]])
         self.assertTrue((small_square_2 == expected_small_square_2).all())
+
+
+        small_square_3 = Snake._get_small_square((0, 1), 2, A)
+        expected_small_square_3 = np.array([[1]])
+        self.assertTrue((small_square_3 == expected_small_square_3).all())
 
 if __name__ == '__main__':
     unittest.main()
