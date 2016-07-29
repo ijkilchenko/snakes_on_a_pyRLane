@@ -1,16 +1,26 @@
 import time
+import pickle
 from Board import Board
 
 if __name__ == '__main__':
     board = Board(30, 10, are_snakes_helpless=False)
 
-    num_frames = 20000
+    with open('models/model.p', 'rb') as model_file:
+        board.oracle.Q = pickle.load(model_file)
+
+    num_frames = 2000
     delay = .05
 
-    for _ in range(num_frames):
-        board.print()
-        board.tick()
-        time.sleep(delay)
+    try:
+        for _ in range(num_frames):
+            board.print()
+            board.tick()
+            time.sleep(delay)
+    except KeyboardInterrupt:
+        pass
+    else:
+        with open('models/model.p', 'wb') as model_file:
+            pickle.dump(board.oracle.Q, model_file)
 
     print('Average length of dead snakes: %.2f' %
           (sum(board.lengths_of_dead_snakes)/len(board.lengths_of_dead_snakes)))

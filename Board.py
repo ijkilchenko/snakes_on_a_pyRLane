@@ -118,7 +118,7 @@ class Snake():
         self.dots = [board.find_empty_point()] # Assume that head is the last point.
         # The length of the small square (defines the limited landscape).
         # If it's set to 5, then the size of the Q-domain space is (at most) 33,554,432.
-        self.sight_length = 5 # Always make it odd to center the snake's head.
+        self.sight_length = 3 # Always make it odd to center the snake's head.
         for x, y in self.dots:
             board.points[x][y] = self.body
 
@@ -140,10 +140,10 @@ class Snake():
         elif x+square_radius >= len(points):
             legal_radius = len(points)-x
 
-        if y - square_radius < 0:
-            legal_radius = min(legal_radius, x)
-        elif y + square_radius >= len(points):
-            legal_radius = min(legal_radius, len(points) - x)
+        if y-square_radius < 0:
+            legal_radius = min(legal_radius, y)
+        elif y+square_radius >= len(points):
+            legal_radius = min(legal_radius, len(points) - y)
 
         # Handle borders and corners (the small square just becomes smaller).
         left = x-legal_radius

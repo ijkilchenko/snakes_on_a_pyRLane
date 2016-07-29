@@ -1,5 +1,4 @@
 import numpy as np
-from collections import defaultdict
 
 class Oracle:
     """The Oracle is the agent that learns. Snakes "come" to the Oracle
@@ -27,7 +26,7 @@ class Oracle:
 
     def __init__(self):
         # Q function initialized randomly.
-        self.Q = defaultdict(lambda : 20) #np.random.uniform())
+        self.Q = {}
 
     def consult(self, small_square, moves, last_small_square, last_move):
         # Each move in moves is a triple (delta_x, delta_y, action) where
@@ -35,6 +34,8 @@ class Oracle:
 
         alpha = 0.1 # Learning rate.
         gamma = 0.5 # Discount factor.
+
+        init_state_weight = 20
 
         if len(moves) == 0:
             # There are no moves and the snake has to die. Reward is negative.
@@ -44,11 +45,17 @@ class Oracle:
             # We need to select the next state from the possible next states (the moves).
             next_move_index = np.random.randint(0, len(moves))
 
-            max_Q_over_moves = self.Q[(tuple(tuple(row) for row in small_square), moves[next_move_index])]
+            try:
+                max_Q_over_moves = self.Q[(tuple(tuple(row) for row in small_square), moves[next_move_index])]
+            except KeyError:
+                max_Q_over_moves = init_state_weight
             best_next_move_index = next_move_index
             for current_move_index, move in enumerate(moves):
                 next_state = (tuple(tuple(row) for row in small_square), move)
-                next_Q = self.Q[next_state]
+                try:
+                    next_Q = self.Q[next_state]
+                except KeyError:
+                    next_Q = init_state_weight
                 if next_Q > max_Q_over_moves:
                     max_Q_over_moves = next_Q
                     best_next_move_index = current_move_index
@@ -61,7 +68,10 @@ class Oracle:
 
         if last_move != (0, 0, 0):
             last_state = (tuple(tuple(row) for row in last_small_square), last_move)
-            self.Q[last_state] += alpha * (reward + gamma * max_Q_over_moves - self.Q[last_state])
+            try:
+                self.Q[last_state] += alpha * (reward + gamma * max_Q_over_moves - self.Q[last_state])
+            except KeyError:
+                self.Q[last_state] = init_state_weight + alpha * (reward + gamma * max_Q_over_moves - init_state_weight)
 
         if len(moves) == 0:
             return
