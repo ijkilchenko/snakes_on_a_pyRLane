@@ -2,7 +2,8 @@ import pickle
 from Board import Board
 
 if __name__ == '__main__':
-  board = Board(30, 10, are_snakes_learning=True)
+  # NOTE: make sure that Board is initialized the same in `teach_snakes.py`
+  board = Board(30, 10, are_snakes_helpless=False, are_snakes_learning=True)
 
   num_frames = 2000000
 

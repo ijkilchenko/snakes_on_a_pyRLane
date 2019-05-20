@@ -64,6 +64,7 @@ class Oracle:
 
       best_next_move_index = next_move_index
 
+      # This iterates over possible moves and selects the action with the max Q.
       for current_move_index, move in enumerate(moves):
         next_state = (self._my_hash(small_square), move)
         try:
@@ -84,6 +85,7 @@ class Oracle:
     if last_move != (0, 0, 0):  # If this isn't the very first move for the snake.
       last_state = (self._my_hash(last_small_square), last_move)
 
+      # Q-learning update rule (https://en.wikipedia.org/wiki/Q-learning#Algorithm)
       try:
         self.Q[last_state] += alpha * (reward + gamma * max_Q_over_moves - self.Q[last_state])
       except KeyError:
