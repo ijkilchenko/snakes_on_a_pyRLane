@@ -1,4 +1,6 @@
-models/
+# Pickle files
+*.p
+# PyCharm
 .idea/
 
 # Byte-compiled / optimized / DLL files
