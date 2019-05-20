@@ -53,17 +53,17 @@ class TestSnake(unittest.TestCase):
 
     def test_get_small_square(self):
         A = np.array([[1, 1, 1, 2, 2],
-                      [1, 2, 3, 5, 5],
+                      [2, 2, 3, 5, 5],
                       [4, 5, 6, 7, 8],
                       [1, 5, 6, 8, 9],
                       [4, 4, 2, 1, 1]])
 
-        small_square_1 = Snake._get_small_square((2,2), 2, A)
+        small_square_1 = Snake._get_small_square((2, 2), 2, A)
         self.assertTrue((small_square_1 == A).all())
 
         small_square_2 = Snake._get_small_square((1, 1), 2, A)
         expected_small_square_2 = np.array([[1, 1, 1],
-                                            [1, 2, 3],
+                                            [2, 2, 3],
                                             [4, 5, 6]])
         self.assertTrue((small_square_2 == expected_small_square_2).all())
 

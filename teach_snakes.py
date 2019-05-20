@@ -2,9 +2,9 @@ import pickle
 from Board import Board
 
 if __name__ == '__main__':
-    board = Board(30, 10)
+    board = Board(30, 1, are_snakes_learning=True)
 
-    num_frames = 200000
+    num_frames = 2000000
 
     try:
         for _ in range(num_frames):

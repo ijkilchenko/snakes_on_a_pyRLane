@@ -28,14 +28,20 @@ class Oracle:
         # Q function initialized randomly.
         self.Q = {}
 
+    def _my_hash(self, small_square, debug=False):
+        if debug:
+            return tuple(tuple(row) for row in small_square)
+        else:
+            return small_square.tostring()
+
     def consult(self, small_square, moves, last_small_square, last_move):
         # Each move in moves is a triple (delta_x, delta_y, action) where
         # action tells us whether the move to (delta_x, delta_y) leads us to a fruit (if action is 1).
 
-        alpha = 0.1 # Learning rate.
-        gamma = 0.5 # Discount factor.
+        alpha = 1 # Learning rate.
+        gamma = 0.1 # Discount factor.
 
-        init_state_weight = 20
+        init_state_weight = 30
 
         if len(moves) == 0:
             # There are no moves and the snake has to die. Reward is negative.
@@ -46,12 +52,12 @@ class Oracle:
             next_move_index = np.random.randint(0, len(moves))
 
             try:
-                max_Q_over_moves = self.Q[(tuple(tuple(row) for row in small_square), moves[next_move_index])]
+                max_Q_over_moves = self.Q[self._my_hash(small_square), moves[next_move_index]]
             except KeyError:
                 max_Q_over_moves = init_state_weight
             best_next_move_index = next_move_index
             for current_move_index, move in enumerate(moves):
-                next_state = (tuple(tuple(row) for row in small_square), move)
+                next_state = (self._my_hash(small_square), move)
                 try:
                     next_Q = self.Q[next_state]
                 except KeyError:
@@ -64,10 +70,10 @@ class Oracle:
             if moves[best_next_move_index][-1] == 1:
                 reward = 100
             else:
-                reward = 0
+                reward = -10
 
         if last_move != (0, 0, 0):
-            last_state = (tuple(tuple(row) for row in last_small_square), last_move)
+            last_state = (self._my_hash(last_small_square), last_move)
             try:
                 self.Q[last_state] += alpha * (reward + gamma * max_Q_over_moves - self.Q[last_state])
             except KeyError:
