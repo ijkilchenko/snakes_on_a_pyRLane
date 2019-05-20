@@ -144,18 +144,21 @@ class Snake:
   |  *  |
   =======
   There are 5x5 squares here. The snake has at most 3 actions it can take: move up, left,
-  or right. Baby snakes (just the head) have 4 actions.
+  or right. Baby snakes (just the head) have 4 actions (adult snakes "can't turn backwards").
 
-  Since each square can be either (1) empty, (2) snake head, (3) snake body, or
-  (4) occupied, we estimate the size of the state space to be 4^(5*5) = 1125899906842624.
-  That's a crazy number.
+  Since each square can be either (1) empty, (2) snake head, (3) snake body, (4) occupied, or
+  (5) fruit, we estimate the size of the state space to be 5^(5*5). That's a crazy number.
+
   #TODO: reduce the state space size (limit field of vision or the number of
   types of objects). For example, if we (somehow) reduce the number of objects to
   two types (occupied or not) and limit the the field of vision to 3x3, then
   we estimate the size of the state space to be 2^(3*3) = 512. This state space is a lot
   more learnable.
+  #TODO: check if the base in the calculation is actually the number of types of states.
   Another way to reduce the state space would be to introduce some kind of similarity
   functions that collapse some states together.
+  Another way (C.C.'s idea) is to append the state with more directly useful information
+  such as direction to nearest fruit.
 
   Suppose the snake decides to move up (and it's length is 3).
   =======
@@ -181,8 +184,9 @@ class Snake:
   =======
   We achieve the new state by moving the head into the chosen direction, moving the body,
   recentering, and then doing a rotation. By including rotations, we can reduce the
-  size of the state space by 75%.
-  # TODO: actually implement recentering(?). I don't know if I do this right now(?)
+  size of the state space by 75% (this will make it look like the snake always just
+  moved up).
+  # TODO: implement rotations.
   """
 
   body = 255  # Each piece of the snake is marked as such (except the head).
@@ -193,18 +197,21 @@ class Snake:
     self.is_learning = board.are_snakes_learning
 
     self.board = board  # Snake's board.
-    self.dots = [board.find_empty_point()] # Assume that head is the last point.
+    self.dots = [board.find_empty_point()]  # Assume that head is the last point.
 
     #TODO: We don't have any sort of estimate for how long the training should be
     # given the approximate size of the Q-domain space.
 
     # The length of the small square (defines the limited landscape).
-    self.sight_length = 5  # Always make it odd to center the snake's head.
+    self.sight_length = 5  # Always make it odd to be able to center the snake's head.
     for x, y in self.dots:
       board.points[x][y] = self.body
 
-    self.oracle = board.oracle # Every snake gets access to the same Oracle.
+    self.oracle = board.oracle  # Every snake gets access to the same Oracle.
 
+    # These two fields are not utilized, but may be used in the future to track the
+    # snake's trajectory (in RL, it's common to work with difference of states rather
+    # than a state).
     self.last_small_square = np.array([0])
     self.last_relative_move = (0, 0, 0)
 
@@ -217,6 +224,7 @@ class Snake:
   def _get_small_square(position, square_radius, points):
     y, x = position
 
+    # Recalculate the "radius" if the head is near the border.
     legal_radius = square_radius
     if x-square_radius < 0:
       legal_radius = x
@@ -269,10 +277,10 @@ class Snake:
     if action == 0:  # 0 indicates that we do not eat anything.
       # We are moving the snake up...
       tail = self.dots[0]
-      # Last frame's tail point because empty in the next frame.
+      # Last frame's tail point becomes empty in the next frame.
       self.board.points[tail[0]][tail[1]] = self.board.empty
 
-      # If the body is non-empty...
+      # If the body is non-empty make last frame's head a body particle for the new frame.
       if len(self.dots) > 1:
         head = self.dots[-1]
         self.board.points[head[0]][head[1]] = self.body
@@ -283,6 +291,7 @@ class Snake:
     elif action == 1:  # 1 indicates that we are eating a fruit.
       # We are prepared to eat the fruit at the new point.
 
+      # TODO: this block of code is possibly buggy (leading to overgrown snakes).
       # Kill the fruit at new point.
       self.board.fruits[(new_x, new_y)].die()
       # Grow our snake into this point.
@@ -293,9 +302,8 @@ class Snake:
       self.board.points[head[0]][head[1]] = self.head
 
   def tick(self):
+    """Calling this method essentially advances the snake into the future. """
     moves, relative_moves = self.find_moves()
-
-    #TODO: continue documenting...
 
     # Helpless snakes move randomly (this was used in testing).
     if self.is_helpless or (self.is_learning and np.random.randint(0, 1)): 
@@ -309,7 +317,8 @@ class Snake:
       #TODO: Should the small square be rotated so that the previous
       # move always points to the top of the small square?
       small_square = self.get_small_square()  # This is the current state.
-      # Gives back the Oracle's pick from the moves
+
+      # Gives back the Oracle's pick from the legal moves
       # or None if the snake is destined to die.
       move_index = self.oracle.consult(small_square, relative_moves,
                        self.last_small_square, self.last_relative_move)
@@ -319,7 +328,7 @@ class Snake:
         return
 
       new_x, new_y, action = moves[move_index]
-      self.last_small_square = small_square # Last state.
+      self.last_small_square = small_square  # Last state.
       self.last_relative_move = relative_moves[move_index]  # Last Q-learning action.
 
     self.move(new_x, new_y, action)
@@ -334,6 +343,7 @@ class Snake:
 
 class Reprinter:
   """Credit goes to http://stackoverflow.com/a/15586020/1397712"""
+
   def __init__(self):
     self.text = ''
 
@@ -342,8 +352,8 @@ class Reprinter:
       sys.stdout.write("\x1b[A")
 
   def reprint(self, text):
-    text = '\n' + text + '\n'  # Surround any text with empty lines (added by ijk).
-    # Clear previous text by overwritig non-spaces with spaces.
+    text = '\n' + text + '\n'  # Surround any text with empty lines (added by ijkilchenko).
+    # Clear previous text by overwriting non-spaces with spaces.
     self.moveup(self.text.count("\n"))
     sys.stdout.write(re.sub(r"[^\s]", " ", self.text))
 
