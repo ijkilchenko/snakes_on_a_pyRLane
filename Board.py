@@ -13,8 +13,7 @@ class Board:
   # Used when displaying the board (displays a symbol instead of a number).
   value_to_character = {empty: ' ', occupied: '*', fruit: '@', head: '&'}
 
-  def __init__(self, length=30, num_snakes=1, are_snakes_helpless=False, 
-         are_snakes_learning=False):
+  def __init__(self, length=30, num_snakes=1, are_snakes_helpless=False, are_snakes_learning=False):
     # `points` is a nested list representing a square with sides `length`.
     self.points = [[self.occupied]*(length + 2)]  # Create top(?) border
     self.points += [
@@ -32,7 +31,7 @@ class Board:
 
     self.oracle = Oracle()  # `Oracle` is the reinforcement learning agent.
 
-    self.are_snakes_helpless = are_snakes_helpless  # Regime when snakes act randomly
+    self.are_snakes_helpless = are_snakes_helpless  # If True, makes snakes move randomly.
     self.are_snakes_learning = are_snakes_learning
 
     self.initial_num_snakes = num_snakes
@@ -209,9 +208,8 @@ class Snake:
 
     self.oracle = board.oracle  # Every snake gets access to the same Oracle.
 
-    # These two fields are not utilized, but may be used in the future to track the
-    # snake's trajectory (in RL, it's common to work with difference of states rather
-    # than a state).
+    # I think these fields will also be helpful when implementing the rotation
+    # idea to reduce the state space by 75%.
     self.last_small_square = np.array([0])
     self.last_relative_move = (0, 0, 0)
 
@@ -306,7 +304,8 @@ class Snake:
     moves, relative_moves = self.find_moves()
 
     # Helpless snakes move randomly (this was used in testing).
-    if self.is_helpless or (self.is_learning and np.random.randint(0, 1)): 
+    # NOTE: only calling oracle.consult updates the Q-function.
+    if self.is_helpless:
       if len(moves) == 0:
         self.die()
         return
@@ -321,7 +320,7 @@ class Snake:
       # Gives back the Oracle's pick from the legal moves
       # or None if the snake is destined to die.
       move_index = self.oracle.consult(small_square, relative_moves,
-                       self.last_small_square, self.last_relative_move)
+                                       self.last_small_square, self.last_relative_move)
 
       if move_index is None:
         self.die()

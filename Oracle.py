@@ -44,27 +44,31 @@ class Oracle:
     alpha = 1  # Learning rate.
     gamma = 0.1  # Discount factor.
 
-    init_state_weight = 30
+    init_state_weight = 0
 
     if len(moves) == 0:
       # There are no moves and the snake has to die. Reward is negative.
       reward = -100
-      max_Q_over_moves = 0 # There is no reward after death.
-      return
+      max_Q_over_moves = 0  # There is no reward after death :)
     else:
       # We need to select the next state from the possible next states (the moves).
       next_move_index = np.random.randint(0, len(moves))
 
+      #TODO(alex): reimplement this
+      # Right now what happens is that if moves are equifavorable, the move is picked randomly.
+      # What we want is we want to initialize the reward randomly.
       try:
         max_Q_over_moves = self.Q[self._my_hash(small_square), moves[next_move_index]]
       except KeyError:
         max_Q_over_moves = init_state_weight
+
       best_next_move_index = next_move_index
+
       for current_move_index, move in enumerate(moves):
         next_state = (self._my_hash(small_square), move)
         try:
           next_Q = self.Q[next_state]
-        except KeyError:
+        except KeyError:  # If we've never actually seen this state before.
           next_Q = init_state_weight
         if next_Q > max_Q_over_moves:
           max_Q_over_moves = next_Q
@@ -75,12 +79,17 @@ class Oracle:
       if moves[best_next_move_index][-1] == 1:
         reward = 100
       else:
-        reward = -10
+        reward = 10
 
     if last_move != (0, 0, 0):  # If this isn't the very first move for the snake.
       last_state = (self._my_hash(last_small_square), last_move)
+
       try:
         self.Q[last_state] += alpha * (reward + gamma * max_Q_over_moves - self.Q[last_state])
       except KeyError:
         self.Q[last_state] = init_state_weight + alpha * (reward + gamma * max_Q_over_moves - init_state_weight)
-    return best_next_move_index
+
+    if len(moves) != 0:
+      return best_next_move_index
+    else:
+      return
