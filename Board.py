@@ -112,6 +112,10 @@ class Board:
     text = '\n'.join([' '.join(line) for line in points])
     self.printer.reprint(text)
 
+  def print_drawing(self, points):
+    """Calling this method will draw the current board in the console. """
+    text = '\n'.join([' '.join(line) for line in points])
+    self.printer.reprint(text)
 
 class Fruit:
   body = 240
@@ -202,7 +206,7 @@ class Snake:
     # given the approximate size of the Q-domain space.
 
     # The length of the small square (defines the limited landscape).
-    self.sight_length = 5  # Always make it odd to be able to center the snake's head.
+    self.sight_length = 3  # Always make it odd to be able to center the snake's head.
     for x, y in self.dots:
       board.points[x][y] = self.body
 

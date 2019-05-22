@@ -29,12 +29,9 @@ class Oracle:
     # The domain is the tuple: (hash of the small square, action)
     self.Q = {}
 
-  # TODO: Maybe this implementation detail breaks things?
-  def _my_hash(self, small_square, debug=False):
-    if debug:
-      return tuple(tuple(row) for row in small_square)
-    else:
-      return small_square.tostring()
+  def _unpack(self, small_square):
+    unpacked = tuple(tuple(row) for row in small_square)
+    return unpacked
 
   def consult(self, small_square, moves, last_small_square, last_move):
     # TODO: This function is likely to have q-learning related bugs.
@@ -58,7 +55,7 @@ class Oracle:
       # Right now what happens is that if moves are equifavorable, the move is picked randomly.
       # What we want is we want to initialize the reward randomly.
       try:
-        max_Q_over_moves = self.Q[self._my_hash(small_square), moves[next_move_index]]
+        max_Q_over_moves = self.Q[self._unpack(small_square), moves[next_move_index]]
       except KeyError:
         max_Q_over_moves = init_state_weight
 
@@ -66,7 +63,7 @@ class Oracle:
 
       # This iterates over possible moves and selects the action with the max Q.
       for current_move_index, move in enumerate(moves):
-        next_state = (self._my_hash(small_square), move)
+        next_state = (self._unpack(small_square), move)
         try:
           next_Q = self.Q[next_state]
         except KeyError:  # If we've never actually seen this state before.
@@ -83,7 +80,7 @@ class Oracle:
         reward = 10
 
     if last_move != (0, 0, 0):  # If this isn't the very first move for the snake.
-      last_state = (self._my_hash(last_small_square), last_move)
+      last_state = (self._unpack(last_small_square), last_move)
 
       # Q-learning update rule (https://en.wikipedia.org/wiki/Q-learning#Algorithm)
       try:

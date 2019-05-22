@@ -1,5 +1,6 @@
 import time
 import pickle
+import keyboard
 from Board import Board
 
 if __name__ == '__main__':
@@ -12,17 +13,30 @@ if __name__ == '__main__':
   num_frames = 2000
   delay = 0.05
 
-  try:
-    # The drawing loop.
-    for _ in range(num_frames):
-      board.print()
-      board.tick()
-      time.sleep(delay)
-  except KeyboardInterrupt:
-    pass
-  else:
-    with open('models/model.p', 'wb') as model_file:
-      pickle.dump(board.oracle.Q, model_file)
+  drawings = []  # TODO: Add back and forward buttons
+
+  while True:  # The drawing loop.
+    try:
+      if keyboard.is_pressed('k'):  # Pause
+        while True:
+          try:
+            if keyboard.is_pressed('i'):  # Un-pause
+              break
+            else:
+              pass
+          except KeyboardInterrupt:
+            break
+      else:
+        drawing = board.get_drawing()
+        drawings.append(drawing)
+        board.print_drawing(drawing)
+        board.tick()
+        time.sleep(delay)
+    except KeyboardInterrupt:
+      break
+    else:
+      with open('models/model.p', 'wb') as model_file:
+        pickle.dump(board.oracle.Q, model_file)
 
   # Helpful debugging stuff...
 
