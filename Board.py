@@ -114,7 +114,8 @@ class Board:
 
   def print_drawing(self, points):
     """Calling this method will draw the current board in the console. """
-    text = '\n'.join([' '.join(line) for line in points])
+    text = 'Use j, k, l to control playback\n'
+    text += '\n'.join([' '.join(line) for line in points])
     self.printer.reprint(text)
 
 class Fruit:
