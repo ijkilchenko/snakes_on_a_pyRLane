@@ -79,8 +79,6 @@ class Board:
 
   def tick(self):
     """This function moves each object a frame forward. This function advances time."""
-    self.print()
-
     # TODO: Does this implementation detail break something?
     # Let's update the ticks of snakes in a random order (so
     # neither snake gets to go first).
@@ -149,9 +147,6 @@ class Fruit:
 
   def die(self):
     # Reset the fruit's root point to be empty on the board.
-    print('this: ', self.board.points[self.root[0]][self.root[1]])
-    print(self.root)
-    self.board.print()
     assert self.board.points[self.root[0]][self.root[1]] == self.body
     self.board.points[self.root[0]][self.root[1]] = self.board.empty
 
@@ -302,11 +297,7 @@ class Snake:
     try:
       assert all([self.dots[i] != (new_x, new_y) for i in range(len(self.dots))])
     except AssertionError as e:
-      print((new_x, new_y), action)
-      self.board.reprint()
-      print('body:' , self.dots)
-      print('fruits:', [root for root in self.board.fruits])
-      print('snake length:', len(self.dots))
+      self.board.print()
       raise e
 
     self.board._self_check()
@@ -332,7 +323,6 @@ class Snake:
 
       # TODO: this block of code is possibly buggy (leading to overgrown snakes).
       # Kill the fruit at new point.
-      print(self.board.fruits.keys())
       self.board.fruits[(new_x, new_y)].die()
       del self.board.fruits[(new_x, new_y)]
       # Grow our snake into this point.
@@ -343,7 +333,6 @@ class Snake:
       head = self.dots[-1]
       self.board._self_check()
       self.board.points[head[0]][head[1]] = self.head
-      print('frame:', self.board.frame)
       self.board._self_check()
 
 
