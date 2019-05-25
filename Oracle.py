@@ -24,14 +24,35 @@ class Oracle:
   is because after we choose a move for a state, another snake or a fruit could have
   randomly popped into the limited landscape of the next state. """
 
-  def __init__(self):
+  def __init__(self, board):
     # Q function to be initialized randomly.
     # The domain is the tuple: (hash of the small square, action)
     self.Q = {}
+    self.board = board
 
   def _unpack(self, small_square):
     unpacked = tuple(tuple(row) for row in small_square)
     return unpacked
+
+  @staticmethod
+  def _print_Q_state(state):
+    landscape, action = state
+    landscape = '\n'.join([' '.join(line) for line in landscape])
+    print(landscape)
+    print('Action: ', action)
+
+  def _print_Q_summary(self):
+    num_states = len(self.Q.keys())
+    print('Number of states explored: ', num_states)
+
+    num_characters = 4
+    num_actions = 4
+    sight_length = 3
+    total_num_states = num_characters**(sight_length**2) * num_actions
+    print('Number of total possible states: ', total_num_states)
+
+    print('Ratio of states explored over total: ', num_states/total_num_states)
+
 
   def consult(self, small_square, moves, last_small_square, last_move):
     # TODO: This function is likely to have q-learning related bugs.

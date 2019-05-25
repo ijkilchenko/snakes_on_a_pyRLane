@@ -4,7 +4,7 @@ Watch snakes on a plane learn to eat fruit and avoid each other using Reinforcem
 ## Setup
 We use [keyboard](https://pypi.org/project/keyboard/) to rewind, pause/unpause, and fastforward. Unfortunately, it requires the use of root. 
 
-`pip install keyboard` to install the module.   
+`pip install keyboard` to install the module. 
 
 ## Project structure
 We have a `Board.py` file which holds the implementation for the `Board`, `Fruit`, and `Snake` (and also a `Reprinter` which helps us display the game within a console). 

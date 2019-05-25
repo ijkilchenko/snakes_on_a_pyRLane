@@ -5,13 +5,9 @@ from Oracle import Oracle
 
 
 class Board:
-  empty = 0
+  empty = ' '
   # Indicates that a square on the board is occupied (either a wall or part of a snake).
-  occupied = 255
-  fruit = 240
-  head = 230  # The head of the snake is special
-  # Used when displaying the board (displays a symbol instead of a number).
-  value_to_character = {empty: ' ', occupied: '*', fruit: '@', head: '&'}
+  occupied = '*'
 
   def __init__(self, length=30, num_snakes=1, are_snakes_helpless=False, are_snakes_learning=False):
     # `points` is a nested list representing a square with sides `length`.
@@ -29,7 +25,7 @@ class Board:
 
     self.frame = 0
 
-    self.oracle = Oracle()  # `Oracle` is the reinforcement learning agent.
+    self.oracle = Oracle(self)  # `Oracle` is the reinforcement learning agent.
 
     self.are_snakes_helpless = are_snakes_helpless  # If True, makes snakes move randomly.
     self.are_snakes_learning = are_snakes_learning
@@ -47,13 +43,9 @@ class Board:
     self.fruits = {}  # Maps points to where the fruit is located.
 
   def get_drawing(self):
-    """Takes `points` and maps them to displayable characters"""
-    points = self.points.tolist()
-    for i, line in enumerate(points):
-      for j, character in enumerate(line):
-        points[i][j] = self.value_to_character[character]
+    """Takes `points`"""
 
-    return points
+    return self.points.__deepcopy__('foo')
 
   def is_point_empty(self, x, y):
     return self.points[x][y] == self.empty
@@ -119,7 +111,7 @@ class Board:
     self.printer.reprint(text)
 
 class Fruit:
-  body = 240
+  body = '@'
 
   def __init__(self, board):
     self.board = board  # Fruit's board.
@@ -150,8 +142,8 @@ class Snake:
   There are 5x5 squares here. The snake has at most 3 actions it can take: move up, left,
   or right. Baby snakes (just the head) have 4 actions (adult snakes "can't turn backwards").
 
-  Since each square can be either (1) empty, (2) snake head, (3) snake body, (4) occupied, or
-  (5) fruit, we estimate the size of the state space to be 5^(5*5). That's a crazy number.
+  Since each square can be either (1) empty, (2) snake head, (3) occupied, or
+  (4) fruit, we estimate the size of the state space to be 4^(5*5). That's a crazy number.
 
   #TODO: reduce the state space size (limit field of vision or the number of
   types of objects). For example, if we (somehow) reduce the number of objects to
@@ -193,8 +185,10 @@ class Snake:
   # TODO: implement rotations.
   """
 
-  body = 255  # Each piece of the snake is marked as such (except the head).
-  head = 230
+  body = '*'  # Each piece of the snake is marked as such (except the head).
+  head = '&'
+
+  sight_length = 3  # Always make it odd to be able to center the snake's head.
 
   def __init__(self, board):
     self.is_helpless = board.are_snakes_helpless
@@ -207,7 +201,6 @@ class Snake:
     # given the approximate size of the Q-domain space.
 
     # The length of the small square (defines the limited landscape).
-    self.sight_length = 3  # Always make it odd to be able to center the snake's head.
     for x, y in self.dots:
       board.points[x][y] = self.body
 

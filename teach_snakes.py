@@ -5,7 +5,7 @@ if __name__ == '__main__':
   # NOTE: make sure that Board is initialized the same in `teach_snakes.py`
   board = Board(30, 10, are_snakes_helpless=False, are_snakes_learning=True)
 
-  num_frames = 2000000
+  num_frames = 10**6
 
   try:
     for _ in range(num_frames):

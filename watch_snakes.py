@@ -69,20 +69,24 @@ if __name__ == '__main__':
   # NOTE: make sure that Board is initialized the same in `teach_snakes.py`
   board = Board(30, 10, are_snakes_helpless=False, are_snakes_learning=True)
 
-  with open('models/model.p', 'rb') as model_file:
-    board.oracle.Q = pickle.load(model_file)
+  try:
+    with open('models/model.p', 'rb') as model_file:
+      board.oracle.Q = pickle.load(model_file)
+    print('Previous model loaded')
+  except FileNotFoundError:
+    print('Previous model not loaded!')
 
-  num_frames = 2000
+  num_frames = 12000  # 10 minutes if the delay is 0.05
   delay = 0.05
 
-  while True:  # The drawing loop
-    try:
-      controller = Controller(board)
-    except KeyboardInterrupt:
-      break
-    else:
-      with open('models/model.p', 'wb') as model_file:
-        pickle.dump(board.oracle.Q, model_file)
+  try:
+    controller = Controller(board)
+  except KeyboardInterrupt:
+    pass
+  with open('models/model.p', 'wb') as model_file:
+    pickle.dump(board.oracle.Q, model_file)
+
+  board.oracle._print_Q_summary()
 
   # Helpful debugging stuff...
 
