@@ -69,18 +69,7 @@ class Oracle:
       reward = -100
       max_Q_over_moves = 0  # There is no reward after death :)
     else:
-      # We need to select the next state from the possible next states (the moves).
-      next_move_index = np.random.randint(0, len(moves))
-
-      #TODO(alex): reimplement this
-      # Right now what happens is that if moves are equifavorable, the move is picked randomly.
-      # What we want is we want to initialize the reward randomly.
-      try:
-        max_Q_over_moves = self.Q[self._unpack(small_square), moves[next_move_index]]
-      except KeyError:
-        max_Q_over_moves = init_state_weight
-
-      best_next_move_index = next_move_index
+      max_Q_over_moves = -1000
 
       # This iterates over possible moves and selects the action with the max Q.
       for current_move_index, move in enumerate(moves):
@@ -88,7 +77,8 @@ class Oracle:
         try:
           next_Q = self.Q[next_state]
         except KeyError:  # If we've never actually seen this state before.
-          next_Q = init_state_weight
+          next_Q = np.random.randint(0, 10)
+          self.Q[next_state] = next_Q
         if next_Q > max_Q_over_moves:
           max_Q_over_moves = next_Q
           best_next_move_index = current_move_index
@@ -98,7 +88,7 @@ class Oracle:
       if moves[best_next_move_index][-1] == 1:
         reward = 100
       else:
-        reward = 10
+        reward = 0
 
     if last_move != (0, 0, 0):  # If this isn't the very first move for the snake.
       last_state = (self._unpack(last_small_square), last_move)

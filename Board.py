@@ -51,10 +51,7 @@ class Board:
     return self.points[x][y] == self.empty
 
   def is_point_fruit(self, x, y):
-    if (x, y) in self.fruits:
-      return True
-    else:
-      return False
+    return self.points[x][y] == Fruit.body
 
   def find_empty_point(self):
     """Used for finding empty spaces for placing fruits and snakes. """
@@ -63,15 +60,35 @@ class Board:
       if self.is_point_empty(x, y):
         return x, y
 
+  def _self_check(self):
+    # Check that all snakes are drawn properly
+    for snake in self.snakes:
+      for dot in snake.dots[:-1]:
+        try:
+          assert self.points[dot[0]][dot[1]] == Snake.body
+        except AssertionError as e:
+          self.print()
+          raise e
+    # Check that all fruits are drawn properly
+    for fruit in self.fruits:
+      try:
+        assert self.points[fruit[0]][fruit[1]] == Fruit.body
+      except AssertionError as e:
+        self.print()
+        raise e
+
   def tick(self):
     """This function moves each object a frame forward. This function advances time."""
+    self.print()
 
     # TODO: Does this implementation detail break something?
     # Let's update the ticks of snakes in a random order (so
     # neither snake gets to go first).
     for snake in sorted(self.snakes, key=lambda x : np.random.uniform(0, 1)):
       snake.tick()
+      self._self_check()
 
+    self._self_check()
     # TODO: Does this implementation detail break something?
     # Let's update the fruit in a totally random fashion.
     if len(self.snakes) > 0:
@@ -83,22 +100,34 @@ class Board:
           self.fruits[fruit.root] = fruit
       # Otherwise, let's randomly kill fruit or plant new fruit.
       else:
+        self._self_check()
         if self.frame % 10 == 0:  # Every 10 frames
           if np.random.uniform(0, 1) < 0.5:  # Killing a fruit
+            self._self_check()
             i = np.random.randint(0, len(self.fruits))  # Pick a random fruit.
             fruit = self.fruits[list(self.fruits.keys())[i]]
             root = fruit.root
             fruit.die()  # Die fruit die!
             del self.fruits[root]  # Delete the key (so we don't keep tracking it)
+            self._self_check()
           else:  # Planting a new fruit.
             fruit = Fruit(self)
             self.fruits[fruit.root] = fruit
+            self._self_check()
+        self._self_check()
+    self._self_check()
     if self.initial_num_snakes > len(self.snakes):
       self.snakes.append(Snake(self))
+    self._self_check()
 
     self.frame += 1  # Update keeping track of time.
 
   def print(self):
+    points = self.get_drawing()
+    text = '\n'.join([' '.join(line) for line in points])
+    print(text)
+
+  def reprint(self):
     """Calling this method will draw the current board in the console. """
     points = self.get_drawing()
     text = '\n'.join([' '.join(line) for line in points])
@@ -120,8 +149,11 @@ class Fruit:
 
   def die(self):
     # Reset the fruit's root point to be empty on the board.
+    print('this: ', self.board.points[self.root[0]][self.root[1]])
+    print(self.root)
+    self.board.print()
+    assert self.board.points[self.root[0]][self.root[1]] == self.body
     self.board.points[self.root[0]][self.root[1]] = self.board.empty
-
 
 class Snake:
   """Implementation detail: the snake is not the agent that learns, that's the Oracle.
@@ -266,41 +298,66 @@ class Snake:
   def move(self, new_x, new_y, action):
     """Once a move and an action is determined, apply them. """
 
-    # Sanity check that the move we are about to apply actually changes
-    # where the head is going to be.
-    assert self.dots[-1] != (new_x, new_y)
+    # Sanity check
+    try:
+      assert all([self.dots[i] != (new_x, new_y) for i in range(len(self.dots))])
+    except AssertionError as e:
+      print((new_x, new_y), action)
+      self.board.reprint()
+      print('body:' , self.dots)
+      print('fruits:', [root for root in self.board.fruits])
+      print('snake length:', len(self.dots))
+      raise e
 
+    self.board._self_check()
     if action == 0:  # 0 indicates that we do not eat anything.
       # We are moving the snake up...
       tail = self.dots[0]
       # Last frame's tail point becomes empty in the next frame.
-      self.board.points[tail[0]][tail[1]] = self.board.empty
+      self.board.points[tail[0]][tail[1]] = self.board.empty  # Update tail to empty
 
       # If the body is non-empty make last frame's head a body particle for the new frame.
       if len(self.dots) > 1:
         head = self.dots[-1]
         self.board.points[head[0]][head[1]] = self.body
       self.dots.append((new_x, new_y))
-      self.dots = self.dots[1:] # TODO: Possibly something to optimize.
+      self.dots = self.dots[1:]  # TODO: Possibly something to optimize.
       head = self.dots[-1]
-      self.board.points[head[0]][head[1]] = self.head
+      self.board.points[head[0]][head[1]] = self.head  # Update head on board
+      self.board._self_check()
     elif action == 1:  # 1 indicates that we are eating a fruit.
+      self.board._self_check()
       # We are prepared to eat the fruit at the new point.
+      length_before_eating = len(self.dots)
 
       # TODO: this block of code is possibly buggy (leading to overgrown snakes).
       # Kill the fruit at new point.
+      print(self.board.fruits.keys())
       self.board.fruits[(new_x, new_y)].die()
+      del self.board.fruits[(new_x, new_y)]
       # Grow our snake into this point.
       head = self.dots[-1]
+      self.board._self_check()
       self.board.points[head[0]][head[1]] = self.body
       self.dots.append((new_x, new_y))
       head = self.dots[-1]
+      self.board._self_check()
       self.board.points[head[0]][head[1]] = self.head
+      print('frame:', self.board.frame)
+      self.board._self_check()
+
+
+      length_after_eating = len(self.dots)
+
+      assert length_after_eating > length_before_eating
+      self.board._self_check()
+
 
   def tick(self):
     """Calling this method essentially advances the snake into the future. """
     moves, relative_moves = self.find_moves()
 
+    self.board._self_check()
     # Helpless snakes move randomly (this was used in testing).
     # NOTE: only calling oracle.consult updates the Q-function.
     if self.is_helpless:
@@ -328,7 +385,9 @@ class Snake:
       self.last_small_square = small_square  # Last state.
       self.last_relative_move = relative_moves[move_index]  # Last Q-learning action.
 
+    self.board._self_check()
     self.move(new_x, new_y, action)
+    self.board._self_check()
 
   def die(self):
     self.board.lengths_of_dead_snakes.append(len(self.dots))

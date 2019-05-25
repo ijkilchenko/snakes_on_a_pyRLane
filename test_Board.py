@@ -10,23 +10,23 @@ class TestBoard(unittest.TestCase):
     drawing = board.get_drawing()
     self.assertEqual(len(drawing), 17)
     self.assertEqual(len(drawing[0]), 17)
-    board.print() # Prints board to stdout.
+    board.reprint() # Prints board to stdout.
 
     board = Board(30, 0) # Make a 30x30 board.
     drawing = board.get_drawing()
     self.assertEqual(len(drawing), 32)
     self.assertEqual(len(drawing[0]), 32)
-    board.print() # Prints board to stdout.
+    board.reprint() # Prints board to stdout.
 
   def test_print_multiple_times(self):
     board = Board(15, 0) # Make a 15x15 board.
-    board.print()
+    board.reprint()
     time.sleep(.2)
-    board.print()
+    board.reprint()
     time.sleep(.2)
-    board.print()
+    board.reprint()
     time.sleep(.2)
-    board.print()
+    board.reprint()
 
   def test_tick(self):
     board = Board(15, 0) # Make a 15x15 board.
@@ -37,10 +37,10 @@ class TestBoard(unittest.TestCase):
 
   def test_add_snake(self):
     board = Board(15, 1) # Board with 1 snake.
-    board.print()
+    board.reprint()
 
     board = Board(15, 2) # Board with 2 snakes.
-    board.print()
+    board.reprint()
 
   def test_tick_snake(self):
     board = Board(15, 2) # Make a 15x15 board.
@@ -48,6 +48,10 @@ class TestBoard(unittest.TestCase):
     board.tick()
     snake_end = board.snakes[0].dots[0]
     self.assertNotEqual(snake_start, snake_end)
+
+  def test_intersecting_snakes(self):
+    board = Board(5, 1)
+
 
 class TestSnake(unittest.TestCase):
 
