@@ -71,7 +71,6 @@ class TestSnake(unittest.TestCase):
                                         [4, 5, 6]])
     self.assertTrue((small_square_2 == expected_small_square_2).all())
 
-
     small_square_3 = Snake._get_small_square((0, 1), 2, A)
     expected_small_square_3 = np.array([[1]])
     self.assertTrue((small_square_3 == expected_small_square_3).all())

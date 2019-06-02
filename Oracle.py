@@ -53,6 +53,32 @@ class Oracle:
 
     print('Ratio of states explored over total: ', num_states/total_num_states)
 
+    try:
+      # TODO: Check that snakes dying in the beginning are shorter than snakes dying in the end.
+      print('Average length of dead snakes: %.2f' %
+            (sum(self.board.lengths_of_dead_snakes) / len(self.board.lengths_of_dead_snakes)))
+    except ZeroDivisionError:
+      pass
+
+    # Iterate over the keys of the Oracle (the states that the Oracle has seen)
+    # and pick out the states associated with eating and not eating fruit.
+    # State contains the action in the last slot (-1 in Python).
+    eat_fruit_Q = [self.board.oracle.Q[v] for v in self.board.oracle.Q if v[1][-1] == 1]
+    no_fruit_Q = [self.board.oracle.Q[v] for v in self.board.oracle.Q if v[1][-1] == 0]
+    #TODO: it would be interesting to see the values of the states adjacent to the ones
+    # associated with eating fruit.
+
+    try:
+      print('Average Q of eating states is %.2f' %
+          (sum(eat_fruit_Q)/len(eat_fruit_Q)))
+      print('Average Q of not eating states is %.2f' %
+          (sum(no_fruit_Q) / len(no_fruit_Q)))
+      print('Average Q of all states is %.2f' % (sum(self.board.oracle.Q.values()) / len(self.board.oracle.Q)))
+    except ZeroDivisionError:
+      pass
+
+    print('Number of Q states is %i' % len(self.board.oracle.Q))
+
 
   def consult(self, small_square, moves, last_small_square, last_move):
     # TODO: This function is likely to have q-learning related bugs.
