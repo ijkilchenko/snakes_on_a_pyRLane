@@ -3,16 +3,19 @@ import pickle
 import keyboard
 from Board import Board
 
+
 class Controller:
   """Controls the board. You can rewind, pause/unpause, and fastforward the board
   using keys j, k, l, respectively. """
 
-  def __init__(self, board):
+  def __init__(self, board, num_frames, delay):
     self.hook = keyboard.on_press_key('k', self.pause)
     keyboard.on_press_key('j', self.rewind)
     keyboard.on_press_key('l', self.fastforward)
 
     self.board = board
+    self.num_frames = num_frames
+    self.delay = delay
 
     self.last_drawing_index = -1
     self.drawings = []
@@ -21,7 +24,7 @@ class Controller:
     self.forward()
 
   def forward(self):
-    while True:
+    while True or len(self.drawings) > self.num_frames:
       if not self.is_paused:
         drawing = self.board.get_drawing()
         self.drawings.append(drawing)
@@ -31,7 +34,7 @@ class Controller:
         self.last_drawing_index = len(self.drawings) - 1
 
         self.board.tick()
-        time.sleep(delay)
+        time.sleep(self.delay)
 
   def resume(self, *args):
     keyboard.unhook(self.hook)
@@ -65,9 +68,10 @@ class Controller:
 
     self.pause()
 
+
 if __name__ == '__main__':
   # NOTE: make sure that Board is initialized the same in `teach_snakes.py`
-  board = Board(30, 10, are_snakes_helpless=False, are_snakes_learning=True)
+  board = Board(30, 10, are_snakes_random=False, are_snakes_learning=True)
 
   try:
     with open('models/model.p', 'rb') as model_file:
@@ -82,7 +86,7 @@ if __name__ == '__main__':
   board.oracle._print_Q_summary()
 
   try:
-    controller = Controller(board)
+    controller = Controller(board, num_frames, delay)
   except KeyboardInterrupt:
     pass
   with open('models/model.p', 'wb') as model_file:

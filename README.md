@@ -28,6 +28,3 @@ Do `python test_Board.py` to run all the available tests.
 
 ## Things to try out to debug RL
 * Make initialization of the Q-function smarter with some heuristics 
-
-## Warning
-When talking about states, the language becomes overloaded so sometimes a state refers to the actual configuration of the board, but sometimes it refers to the actual configuration of the board AND an action. 

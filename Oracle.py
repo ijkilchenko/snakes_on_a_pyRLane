@@ -1,4 +1,6 @@
 import numpy as np
+import Board
+
 
 class Oracle:
   """The Oracle is the agent that learns. Snakes "come" to the Oracle
@@ -22,11 +24,13 @@ class Oracle:
   From the point of view of the Oracle, this is a stochastic problem because performing
   a particular move on a particular state doesn't always lead to the same next state. This
   is because after we choose a move for a state, another snake or a fruit could have
-  randomly popped into the limited landscape of the next state. """
+  randomly popped into the limited landscape of the next state.
+  """
 
   def __init__(self, board):
     # Q function to be initialized randomly.
-    # The domain is the tuple: (hash of the small square, action)
+    # The domain type is the tuple: (small square, action)
+    # The range is all real numbers
     self.Q = {}
     self.board = board
 
@@ -43,42 +47,38 @@ class Oracle:
 
   def _print_Q_summary(self):
     num_states = len(self.Q.keys())
-    print('Number of states explored: ', num_states)
+    print('Number of states explored:\t', num_states)
 
-    num_characters = 4
-    num_actions = 4
-    sight_length = 3
-    total_num_states = num_characters**(sight_length**2) * num_actions
-    print('Number of total possible states: ', total_num_states)
+    num_characters = 4  # empty, occupied, snake head, snake body
+    num_actions = 4  # up, down, left, right
+    landscape_length = Board.Snake.landscape_length
+    total_num_states = num_characters ** (landscape_length ** 2) * num_actions
+    print('Number of total possible states:\t', total_num_states)
 
-    print('Ratio of states explored over total: ', num_states/total_num_states)
+    print('Ratio of states explored over total:\t', num_states / total_num_states)
 
     try:
-      # TODO: Check that snakes dying in the beginning are shorter than snakes dying in the end.
-      print('Average length of dead snakes: %.2f' %
-            (sum(self.board.lengths_of_dead_snakes) / len(self.board.lengths_of_dead_snakes)))
+      avg_length_of_dead_snakes = sum(self.board.lengths_of_dead_snakes) / len(self.board.lengths_of_dead_snakes)
+      print('Average length of dead snakes: %.2f' % avg_length_of_dead_snakes)
     except ZeroDivisionError:
       pass
 
     # Iterate over the keys of the Oracle (the states that the Oracle has seen)
     # and pick out the states associated with eating and not eating fruit.
     # State contains the action in the last slot (-1 in Python).
-    eat_fruit_Q = [self.board.oracle.Q[v] for v in self.board.oracle.Q if v[1][-1] == 1]
-    no_fruit_Q = [self.board.oracle.Q[v] for v in self.board.oracle.Q if v[1][-1] == 0]
-    #TODO: it would be interesting to see the values of the states adjacent to the ones
+    eat_fruit_Q = [self.Q[v] for v in self.Q if v[1][-1] == 1]
+    no_fruit_Q = [self.Q[v] for v in self.Q if v[1][-1] == 0]
+    # TODO: it would be interesting to see the values of the states adjacent to the ones
     # associated with eating fruit.
 
     try:
       print('Average Q of eating states is %.2f' %
-          (sum(eat_fruit_Q)/len(eat_fruit_Q)))
+            (sum(eat_fruit_Q) / len(eat_fruit_Q)))
       print('Average Q of not eating states is %.2f' %
-          (sum(no_fruit_Q) / len(no_fruit_Q)))
-      print('Average Q of all states is %.2f' % (sum(self.board.oracle.Q.values()) / len(self.board.oracle.Q)))
+            (sum(no_fruit_Q) / len(no_fruit_Q)))
+      print('Average Q of all states is %.2f' % (sum(self.Q.values()) / len(self.Q)))
     except ZeroDivisionError:
       pass
-
-    print('Number of Q states is %i' % len(self.board.oracle.Q))
-
 
   def consult(self, small_square, moves, last_small_square, last_move):
     # TODO: This function is likely to have q-learning related bugs.
