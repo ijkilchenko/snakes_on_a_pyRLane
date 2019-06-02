@@ -27,12 +27,24 @@ class Oracle:
   randomly popped into the limited landscape of the next state.
   """
 
+  init_state_weight = lambda _ : np.random.randint(0, 10)
+
+  reward_at_death = 0  # There is no reward after death :)
+  reward_when_eating_fruit = 100
+  reward_for_staying_alive = 0
+
+  alpha = 1  # Learning rate
+  gamma = 0.1  # Discount factor
+
   def __init__(self, board):
+    self.board = board
     # Q function to be initialized randomly.
     # The domain type is the tuple: (small square, action)
     # The range is all real numbers
     self.Q = {}
-    self.board = board
+
+    # T is the map of transitions (from state (landscape, move) to probability distribution of landscapes)
+    self.T = {}
 
   def _unpack(self, small_square):
     unpacked = tuple(tuple(row) for row in small_square)
@@ -53,15 +65,15 @@ class Oracle:
     num_actions = 4  # up, down, left, right
     landscape_length = Board.Snake.landscape_length
     total_num_states = num_characters ** (landscape_length ** 2) * num_actions
-    print('Number of total possible states:\t', total_num_states)
+    print('Total possible states:\t', total_num_states)
 
-    print('Ratio of states explored over total:\t', num_states / total_num_states)
+    print('# of states explored over total:\t', num_states / total_num_states)
 
     try:
       avg_length_of_dead_snakes = sum(self.board.lengths_of_dead_snakes) / len(self.board.lengths_of_dead_snakes)
-      print('Average length of dead snakes: %.2f' % avg_length_of_dead_snakes)
     except ZeroDivisionError:
-      pass
+      avg_length_of_dead_snakes = 0
+    print('Average length of dead snakes: %.2f' % avg_length_of_dead_snakes)
 
     # Iterate over the keys of the Oracle (the states that the Oracle has seen)
     # and pick out the states associated with eating and not eating fruit.
@@ -85,45 +97,46 @@ class Oracle:
     # Each move in moves is a triple (delta_x, delta_y, action) where
     # action tells us whether the move to (delta_x, delta_y) leads us to a fruit (if action is 1).
 
-    alpha = 1  # Learning rate.
-    gamma = 0.1  # Discount factor.
-
-    init_state_weight = 0
+    # TODO: We don't have to initialize these here
+    max_Q_val_over_moves = 0  # TODO: Only need this here in case len(moves) == 0
+    best_next_move_index = 0
 
     if len(moves) == 0:
       # There are no moves and the snake has to die. Reward is negative.
-      reward = -100
-      max_Q_over_moves = 0  # There is no reward after death :)
+      reward = self.reward_at_death
     else:
-      max_Q_over_moves = -1000
+      max_Q_val_over_moves = -np.inf
 
       # This iterates over possible moves and selects the action with the max Q.
       for current_move_index, move in enumerate(moves):
         next_state = (self._unpack(small_square), move)
+
         try:
-          next_Q = self.Q[next_state]
+          next_Q_val = self.Q[next_state]
         except KeyError:  # If we've never actually seen this state before.
-          next_Q = np.random.randint(0, 10)
-          self.Q[next_state] = next_Q
-        if next_Q > max_Q_over_moves:
-          max_Q_over_moves = next_Q
+          next_Q_val = self.init_state_weight()
+          self.Q[next_state] = next_Q_val
+
+        if next_Q_val > max_Q_val_over_moves:
+          max_Q_val_over_moves = next_Q_val
           best_next_move_index = current_move_index
 
       # TODO: Play around with reward values, maybe need different numbers for better training.
       # If the best move (according to Q) leads us to eat a fruit, reward ourselves.
       if moves[best_next_move_index][-1] == 1:
-        reward = 100
+        reward = self.reward_when_eating_fruit
       else:
-        reward = 0
+        reward = self.reward_for_staying_alive
 
+    # TODO: What do we do when this is the last move for the snake?
     if last_move != (0, 0, 0):  # If this isn't the very first move for the snake.
       last_state = (self._unpack(last_small_square), last_move)
 
       # Q-learning update rule (https://en.wikipedia.org/wiki/Q-learning#Algorithm)
       try:
-        self.Q[last_state] += alpha * (reward + gamma * max_Q_over_moves - self.Q[last_state])
+        self.Q[last_state] += self.alpha * (reward + self.gamma * max_Q_val_over_moves - self.Q[last_state])
       except KeyError:
-        self.Q[last_state] = init_state_weight + alpha * (reward + gamma * max_Q_over_moves - init_state_weight)
+        self.Q[last_state] = self.init_state_weight() + self.alpha * (reward + self.gamma * max_Q_val_over_moves - self.init_state_weight())
 
     if len(moves) != 0:
       return best_next_move_index

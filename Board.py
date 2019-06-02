@@ -157,8 +157,7 @@ class Board:
     """Calling this method will draw the current board in the console
     """
 
-    text = 'Use j, k, l to control playback\n'
-    text += '\n'.join([' '.join(line) for line in drawing])
+    text = '\n'.join([' '.join(line) for line in drawing])
     self.printer.reprint(text)
 
 
@@ -431,7 +430,7 @@ class Reprinter:
       sys.stdout.write("\x1b[A")
 
   def reprint(self, text):
-    text = '\n' + text + '\n'  # Surround any text with symbol_empty lines (added by ijkilchenko).
+    text = 'Use j, k, l to control playback\n' + text + '\n'
     # Clear previous text by overwriting non-spaces with spaces.
     self.moveup(self.text.count("\n"))
     sys.stdout.write(re.sub(r"[^\s]", " ", self.text))

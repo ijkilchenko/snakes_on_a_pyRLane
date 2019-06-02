@@ -15,7 +15,8 @@ if __name__ == '__main__':
   except KeyboardInterrupt:
     pass
 
+  board.oracle._print_Q_summary()
+
   with open('models/model.p', 'wb') as model_file:
     pickle.dump(board.oracle.Q, model_file)
 
-  board.oracle._print_Q_summary()
