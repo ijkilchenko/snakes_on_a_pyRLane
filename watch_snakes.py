@@ -83,7 +83,7 @@ if __name__ == '__main__':
   num_frames = 12000  # 10 minutes if the delay is 0.05
   delay = 0.05
 
-  board.oracle._print_Q_summary()
+  board.oracle._print_Q_summary_snapshot()
 
   try:
     controller = Controller(board, num_frames, delay)
@@ -92,4 +92,4 @@ if __name__ == '__main__':
   with open('models/model.p', 'wb') as model_file:
     pickle.dump(board.oracle.Q, model_file)
 
-  board.oracle._print_Q_summary()
+  board.oracle._print_Q_summary_snapshot()

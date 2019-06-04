@@ -1,5 +1,6 @@
 import numpy as np
 import Board
+from collections import defaultdict
 
 
 class Oracle:
@@ -19,7 +20,9 @@ class Oracle:
 
   The cartesian product of states and actions/moves is the domain of the Q function
   which the Oracle must learn over many episodes. The range of the Q function
-  is the set of possible rewards.
+  is all real numbers which represent the value at that point (being in a specific state
+  and taking some specific action). Note that the range it's simply the set of
+  possible rewards.
 
   From the point of view of the Oracle, this is a stochastic problem because performing
   a particular move on a particular state doesn't always lead to the same next state. This
@@ -27,14 +30,14 @@ class Oracle:
   randomly popped into the limited landscape of the next state.
   """
 
-  init_state_weight = lambda _ : np.random.randint(0, 10)
+  init_state_weight = lambda _ : np.random.normal()
 
-  reward_at_death = 0  # There is no reward after death :)
+  reward_at_death = -10  # There is no reward after death :)
   reward_when_eating_fruit = 100
   reward_for_staying_alive = 0
 
-  alpha = 1  # Learning rate
-  gamma = 0.1  # Discount factor
+  alpha = 0.1  # Learning rate
+  gamma = 0.2  # Discount factor
 
   def __init__(self, board):
     self.board = board
@@ -43,8 +46,15 @@ class Oracle:
     # The range is all real numbers
     self.Q = {}
 
-    # T is the map of transitions (from state (landscape, move) to probability distribution of landscapes)
-    self.T = {}
+    # T is the map of transitions (from state (landscape, move) to a map from new landscape to the count of times
+    # we arrive at the new landscape -- almost a probability distribution but not normalized)
+    self.T = defaultdict(lambda *args : defaultdict(lambda *bargs : 0))
+
+    # Tinv is the map from landscapes to the set of states that led to that landscape at some point.
+    self.Tinv = defaultdict(lambda : set())
+
+    # F is the map from state (landscape, move) to the count of visits of that state
+    self.F = defaultdict(lambda *args : 0)
 
   def _unpack(self, small_square):
     unpacked = tuple(tuple(row) for row in small_square)
@@ -57,23 +67,29 @@ class Oracle:
     print(landscape)
     print('Action: ', action)
 
-  def _print_Q_summary(self):
+  def _print_Q_summary_snapshot(self):
+    num_states, reached_states_ratio, avg_length_of_dead_snakes = self._get_Q_summary_snapshot()
+
+    print('Num of states explored:\t', num_states)
+
+    print('Ratio of reached states:\t', reached_states_ratio)
+
+    print('Average length of dead snakes: %.2f' % avg_length_of_dead_snakes)
+
+  def _get_Q_summary_snapshot(self):
     num_states = len(self.Q.keys())
-    print('Number of states explored:\t', num_states)
 
     num_characters = 4  # empty, occupied, snake head, snake body
     num_actions = 4  # up, down, left, right
     landscape_length = Board.Snake.landscape_length
     total_num_states = num_characters ** (landscape_length ** 2) * num_actions
-    print('Total possible states:\t', total_num_states)
 
-    print('# of states explored over total:\t', num_states / total_num_states)
+    reached_states_ratio = num_states / total_num_states
 
     try:
       avg_length_of_dead_snakes = sum(self.board.lengths_of_dead_snakes) / len(self.board.lengths_of_dead_snakes)
     except ZeroDivisionError:
       avg_length_of_dead_snakes = 0
-    print('Average length of dead snakes: %.2f' % avg_length_of_dead_snakes)
 
     # Iterate over the keys of the Oracle (the states that the Oracle has seen)
     # and pick out the states associated with eating and not eating fruit.
@@ -92,6 +108,8 @@ class Oracle:
     except ZeroDivisionError:
       pass
 
+    return num_states, reached_states_ratio, avg_length_of_dead_snakes
+
   def consult(self, small_square, moves, last_small_square, last_move):
     # TODO: This function is likely to have q-learning related bugs.
     # Each move in moves is a triple (delta_x, delta_y, action) where
@@ -101,6 +119,8 @@ class Oracle:
     max_Q_val_over_moves = 0  # TODO: Only need this here in case len(moves) == 0
     best_next_move_index = 0
 
+    small_square_unpacked = self._unpack(small_square)
+
     if len(moves) == 0:
       # There are no moves and the snake has to die. Reward is negative.
       reward = self.reward_at_death
@@ -109,7 +129,7 @@ class Oracle:
 
       # This iterates over possible moves and selects the action with the max Q.
       for current_move_index, move in enumerate(moves):
-        next_state = (self._unpack(small_square), move)
+        next_state = (small_square_unpacked, move)
 
         try:
           next_Q_val = self.Q[next_state]
@@ -137,6 +157,10 @@ class Oracle:
         self.Q[last_state] += self.alpha * (reward + self.gamma * max_Q_val_over_moves - self.Q[last_state])
       except KeyError:
         self.Q[last_state] = self.init_state_weight() + self.alpha * (reward + self.gamma * max_Q_val_over_moves - self.init_state_weight())
+
+      self.T[last_state][small_square_unpacked] += 1
+      self.Tinv[small_square_unpacked].add(last_state)
+    self.F[small_square_unpacked] += 1
 
     if len(moves) != 0:
       return best_next_move_index

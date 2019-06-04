@@ -387,7 +387,7 @@ class Snake:
 
       new_x, new_y, action = moves[np.random.randint(0, len(moves))]
 
-    else:  # Non-helpless snakes consult the Oracle.
+    else:  # Non-random snakes consult the Oracle.
       # TODO: Should the small square be rotated so that the previous
       # move always points to the top of the small square?
       small_square = self.get_small_square()  # This is the current landscape
@@ -403,7 +403,7 @@ class Snake:
 
       new_x, new_y, action = moves[move_index]
       self.last_small_square = small_square  # Last state
-      self.last_relative_move = relative_moves[move_index]  # Last Q-learning action
+      self.last_relative_move = relative_moves[move_index]  # Last Q-learning move
 
     self.board._self_check()
     self.move(new_x, new_y, action)
