@@ -46,6 +46,8 @@ class Board:
     # the lengths of snakes (upon inevitable dying) should be increasing.
     self.lengths_of_dead_snakes = []
 
+    self.total_Q_of_dead_snakes = []
+
     self.fruits = {}  # Maps points to where the fruit is located.
 
     self.printer = Reprinter()
@@ -264,6 +266,8 @@ class Snake:
     self.last_small_square = np.array([0])
     self.last_relative_move = (0, 0, 0)
 
+    self.total_Q_value_obtained = 0
+
   def get_small_square(self):
     """Gets the state around the snake's head
     """
@@ -394,8 +398,7 @@ class Snake:
 
       # Gives back the Oracle's pick from the legal moves
       # or None if the snake is destined to die.
-      move_index = self.oracle.consult(small_square, relative_moves,
-                                       self.last_small_square, self.last_relative_move)
+      move_index = self.oracle.consult(small_square, relative_moves, self)
 
       if move_index is None:
         self.die()
@@ -411,6 +414,7 @@ class Snake:
 
   def die(self):
     self.board.lengths_of_dead_snakes.append(len(self.dots))
+    self.board.total_Q_of_dead_snakes.append(self.total_Q_value_obtained)
 
     for dot in self.dots:
       self.board.points[dot[0]][dot[1]] = self.board.symbol_empty

@@ -74,7 +74,7 @@ if __name__ == '__main__':
   board = Board(30, 10, are_snakes_random=False, are_snakes_learning=True)
 
   try:
-    with open('models/model.p', 'rb') as model_file:
+    with open('data/model.p', 'rb') as model_file:
       board.oracle.Q = pickle.load(model_file)
     print('Previous model loaded')
   except FileNotFoundError:
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     controller = Controller(board, num_frames, delay)
   except KeyboardInterrupt:
     pass
-  with open('models/model.p', 'wb') as model_file:
+  with open('data/model.p', 'wb') as model_file:
     pickle.dump(board.oracle.Q, model_file)
 
   board.oracle._print_Q_summary_snapshot()
