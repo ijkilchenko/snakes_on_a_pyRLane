@@ -1,5 +1,4 @@
 import numpy as np
-import Board
 from collections import defaultdict
 
 
@@ -48,22 +47,22 @@ class Oracle:
   randomly popped into the limited landscape of the next state.
   """
 
-  # TODO: Play around with reward values, maybe need different numbers for better training.
-  init_state_weight = lambda _: np.random.normal()
-
-  reward_at_death = -10  # There is no reward after death :)
-  reward_when_eating_fruit = 10
-  reward_for_staying_alive = 0
-
-  alpha = 0.15  # Learning rate
-  gamma = 0.85  # Discount factor
-
   def __init__(self, board):
     self.board = board
     # Q function to be initialized randomly.
     # The domain type is the tuple: (small square, action)
     # The range is all real numbers
     self.Q = {}
+
+    # TODO: Play around with reward values, maybe need different numbers for better training.
+    self.init_state_weight = lambda *args: np.random.normal()
+
+    self.reward_at_death = board.reward_at_death  # There is no reward after death :)
+    self.reward_when_eating_fruit = board.reward_when_eating_fruit
+    self.reward_for_staying_alive = board.reward_for_staying_alive
+
+    self.alpha = board.alpha  # Learning rate
+    self.gamma = board.gamma  # Discount factor
 
     # T is the map of transitions (from state (landscape, move) to a map from new landscape to the count of times
     # we arrive at the new landscape -- almost a probability distribution but not normalized)
@@ -114,7 +113,7 @@ class Oracle:
 
     num_characters = 4  # empty, occupied, snake head, snake body
     num_actions = 4  # up, down, left, right
-    landscape_length = Board.Snake.landscape_length
+    landscape_length = self.board.snake_landscape_length
     total_num_states = num_characters ** (landscape_length ** 2) * num_actions
 
     reached_states_ratio = num_states / total_num_states

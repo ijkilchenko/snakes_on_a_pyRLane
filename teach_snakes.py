@@ -1,15 +1,13 @@
 import pickle
 import matplotlib
+
 matplotlib.use('TkAgg')  # Fixes "RuntimeError: Python is not installed as a framework."
 import matplotlib.pyplot as plt
 from Board import Board
+from itertools import product
 
-if __name__ == '__main__':
-  # NOTE: make sure that Board is initialized the same in `teach_snakes.py`
-  board = Board(30, 20)
 
-  num_frames = 10 ** 3
-
+def teach_snakes(board, num_frames):
   board.oracle._print_Q_summary_snapshot()
 
   num_states = []
@@ -104,3 +102,29 @@ if __name__ == '__main__':
 
   with open('data/model.p', 'wb') as model_file:
     pickle.dump(board.oracle.Q, model_file)
+
+
+if __name__ == '__main__':
+  reward_at_death = -10
+  reward_when_eating_fruit = 10
+  reward_for_staying_alive = 0
+
+  alphas = [0.15, 0.015, 0.5, 0.9]
+  gammas = [0.85, 0.1, 0.5, 0.75, 0.95]
+  snake_landscape_lengths = [7, 3, 5]
+
+  hparams = list(product(snake_landscape_lengths, alphas, gammas))
+
+  num_frames = 10 ** 4
+
+  for hparam in hparams[:1]:
+    print(hparam)
+    snake_landscape_length, alpha, gamma = hparam
+    # NOTE: make sure that Board is initialized the same in `teach_snakes.py`
+    board = Board(side_length=30, num_snakes=20, snake_landscape_length=snake_landscape_length,
+                  reward_at_death=reward_at_death,
+                  reward_when_eating_fruit=reward_when_eating_fruit, reward_for_staying_alive=reward_for_staying_alive,
+                  alpha=alpha, gamma=gamma)
+
+    teach_snakes(board, num_frames)
+    print()

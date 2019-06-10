@@ -8,7 +8,8 @@ class Board:
   symbol_empty = ' '
   symbol_occupied = '*'  # Point marked as such is either a snake symbol_fruit or a board wall
 
-  def __init__(self, side_length=30, num_snakes=10):
+  def __init__(self, side_length=30, num_snakes=10, snake_landscape_length=5, reward_at_death=-10,
+               reward_when_eating_fruit=10, reward_for_staying_alive=0, alpha=0.15, gamma=0.85):
     """Constructor for `Board`
 
     Args:
@@ -31,10 +32,19 @@ class Board:
 
     self.frame = 0  # Keeps track of the number of frames passed
 
+    # TODO: Play around with reward values, maybe need different numbers for better training.
+    self.reward_at_death = reward_at_death  # There is no reward after death :)
+    self.reward_when_eating_fruit = reward_when_eating_fruit
+    self.reward_for_staying_alive = reward_for_staying_alive
+
+    self.alpha = alpha  # Learning rate
+    self.gamma = gamma  # Discount factor
+
     self.oracle = Oracle(self)  # `Oracle` is the reinforcement learning agent
 
     self.initial_num_snakes = num_snakes
     self.snakes = []
+    self.snake_landscape_length = snake_landscape_length
     for _ in range(self.initial_num_snakes):
       self.snakes.append(Snake(self))  # snakes are randomly placed.
 
@@ -246,8 +256,6 @@ class Snake:
   symbol_body = '*'  # Each piece of the snake is marked as such (except the head)
   symbol_head = '&'
 
-  landscape_length = 7  # Always make it odd to be able to center the snake's head
-
   def __init__(self, board):
     self.is_random = False if np.random.randint(0, 2) else True
 
@@ -266,6 +274,8 @@ class Snake:
     self.last_relative_move = (0, 0, 0)
 
     self.total_Q_value_obtained = 0
+
+    self.landscape_length = board.snake_landscape_length  # Always make it odd to be able to center the snake's head
 
   def get_small_square(self):
     """Gets the state around the snake's head
@@ -404,7 +414,7 @@ class Snake:
         return
 
       new_x, new_y, action = moves[move_index]
-      if np.random.uniform(0, 1) < 1/np.log(self.board.frame):
+      if np.random.uniform(0, 1) < 1 / np.log(self.board.frame):
         new_x, new_y, action = moves[np.random.randint(0, len(moves))]
       self.last_small_square = small_square  # Last state
       self.last_relative_move = relative_moves[move_index]  # Last Q-learning move
