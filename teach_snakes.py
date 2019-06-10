@@ -6,9 +6,9 @@ from Board import Board
 
 if __name__ == '__main__':
   # NOTE: make sure that Board is initialized the same in `teach_snakes.py`
-  board = Board(30, 10, are_snakes_random=False, are_snakes_learning=True)
+  board = Board(30, 20)
 
-  num_frames = 10 ** 4
+  num_frames = 10 ** 3
 
   board.oracle._print_Q_summary_snapshot()
 
@@ -16,6 +16,8 @@ if __name__ == '__main__':
   reached_states_ratio = []
   avg_length_of_dead_snakes = []
   avg_Q_of_dead_snakes = []
+  avg_length_of_dead_random_snakes = []
+  avg_Q_of_dead_random_snakes = []
   avg_Q_eating_states = []
   avg_Q_one_away_eating_states = []
   avg_Q_two_away_eating_states = []
@@ -30,6 +32,8 @@ if __name__ == '__main__':
         reached_states_ratio.append(qsummary.reached_states_ratio)
         avg_length_of_dead_snakes.append(qsummary.avg_length_of_dead_snakes)
         avg_Q_of_dead_snakes.append(qsummary.avg_Q_of_dead_snakes)
+        avg_length_of_dead_random_snakes.append(qsummary.avg_length_of_dead_random_snakes)
+        avg_Q_of_dead_random_snakes.append(qsummary.avg_Q_of_dead_random_snakes)
         avg_Q_eating_states.append(qsummary.avg_Q_eating_states)
         avg_Q_one_away_eating_states.append(qsummary.avg_Q_one_away_eating_states)
         avg_Q_two_away_eating_states.append(qsummary.avg_Q_two_away_eating_states)
@@ -53,7 +57,7 @@ if __name__ == '__main__':
   ax1.plot(t, num_states, color=color, label='Num of States Reached')
   ax1.tick_params(axis='y', labelcolor=color)
 
-  plt.legend()
+  plt.legend(loc=0)
 
   ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 
@@ -66,7 +70,7 @@ if __name__ == '__main__':
   ax2.plot(t, avg_Q, color='yellow', label='Average Q')
   ax2.tick_params(axis='y', labelcolor=color)
 
-  plt.legend()
+  plt.legend(loc=2)
 
   plt.savefig('data/Q_convergence_summary.png')
 
@@ -79,18 +83,20 @@ if __name__ == '__main__':
   ax1.set_xlabel('Frames (100\'s)')
   ax1.set_ylabel('Average length of dead snakes', color=color)
   ax1.plot(t, avg_length_of_dead_snakes, color=color, label='Average length of dead snakes')
+  ax1.plot(t, avg_length_of_dead_random_snakes, color='black', label='Average length of dead random snakes')
   ax1.tick_params(axis='y', labelcolor=color)
 
-  plt.legend()
+  plt.legend(loc=0)
 
   ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 
   color = 'green'
   ax2.set_ylabel('Q', color=color)  # we already handled the x-label with ax1
   ax2.plot(t, avg_Q_of_dead_snakes, color=color, label='Average Q of dead snakes')
+  ax2.plot(t, avg_Q_of_dead_random_snakes, color='black', label='Average Q of dead random snakes')
   ax2.tick_params(axis='y', labelcolor=color)
 
-  plt.legend()
+  plt.legend(loc=2)
 
   plt.savefig('data/snakes_convergence_summary.png')
 

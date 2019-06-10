@@ -8,14 +8,13 @@ class Board:
   symbol_empty = ' '
   symbol_occupied = '*'  # Point marked as such is either a snake symbol_fruit or a board wall
 
-  def __init__(self, side_length=30, num_snakes=10, are_snakes_random=False, are_snakes_learning=False):
+  def __init__(self, side_length=30, num_snakes=10):
     """Constructor for `Board`
 
     Args:
       side_length (int): length of the side of the Board
       num_snakes (int): number of snakes on the Board
       are_snakes_random (bool): If True, makes snakes move randomly
-      are_snakes_learning (bool): If True, the snakes consult the Oracle
     """
 
     # `points` is a nested list representing a square with sides `side_length`
@@ -34,9 +33,6 @@ class Board:
 
     self.oracle = Oracle(self)  # `Oracle` is the reinforcement learning agent
 
-    self.are_snakes_random = are_snakes_random
-    self.are_snakes_learning = are_snakes_learning
-
     self.initial_num_snakes = num_snakes
     self.snakes = []
     for _ in range(self.initial_num_snakes):
@@ -47,6 +43,10 @@ class Board:
     self.lengths_of_dead_snakes = []
 
     self.total_Q_of_dead_snakes = []
+
+    self.lengths_of_dead_random_snakes = []
+
+    self.total_Q_of_dead_random_snakes = []
 
     self.fruits = {}  # Maps points to where the fruit is located.
 
@@ -249,8 +249,7 @@ class Snake:
   landscape_length = 7  # Always make it odd to be able to center the snake's head
 
   def __init__(self, board):
-    self.is_random = board.are_snakes_random
-    self.is_learning = board.are_snakes_learning
+    self.is_random = False if np.random.randint(0, 2) else True
 
     self.board = board  # Snake's board
     self.dots = [board.find_empty_point()]  # Assume that head is the last point
@@ -415,8 +414,12 @@ class Snake:
     self.board._self_check()
 
   def die(self):
-    self.board.lengths_of_dead_snakes.append(len(self.dots))
-    self.board.total_Q_of_dead_snakes.append(self.total_Q_value_obtained)
+    if self.is_random:
+      self.board.lengths_of_dead_random_snakes.append(len(self.dots))
+      self.board.total_Q_of_dead_random_snakes.append(self.total_Q_value_obtained)
+    else:
+      self.board.lengths_of_dead_snakes.append(len(self.dots))
+      self.board.total_Q_of_dead_snakes.append(self.total_Q_value_obtained)
 
     for dot in self.dots:
       self.board.points[dot[0]][dot[1]] = self.board.symbol_empty

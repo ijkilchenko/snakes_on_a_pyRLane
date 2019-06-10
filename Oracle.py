@@ -5,12 +5,15 @@ from collections import defaultdict
 
 class QSummary:
   def __init__(self, num_states, reached_states_ratio, avg_length_of_dead_snakes, avg_Q_of_dead_snakes,
+               avg_length_of_dead_random_snakes, avg_Q_of_dead_random_snakes,
                avg_Q_eating_states, avg_Q_one_away_eating_states, avg_Q_two_away_eating_states, avg_Q_no_eating_states,
                avg_Q):
     self.num_states = num_states
     self.reached_states_ratio = reached_states_ratio
     self.avg_length_of_dead_snakes = avg_length_of_dead_snakes
     self.avg_Q_of_dead_snakes = avg_Q_of_dead_snakes
+    self.avg_length_of_dead_random_snakes = avg_length_of_dead_random_snakes
+    self.avg_Q_of_dead_random_snakes = avg_Q_of_dead_random_snakes
     self.avg_Q_eating_states = avg_Q_eating_states
     self.avg_Q_one_away_eating_states = avg_Q_one_away_eating_states
     self.avg_Q_two_away_eating_states = avg_Q_two_away_eating_states
@@ -94,6 +97,10 @@ class Oracle:
 
     print('Average Q of dead snakes: %.2f' % qsummary.avg_Q_of_dead_snakes)
 
+    print('Average length of dead random snakes: %.2f' % qsummary.avg_length_of_dead_random_snakes)
+
+    print('Average Q of dead random snakes: %.2f' % qsummary.avg_Q_of_dead_random_snakes)
+
     print('Average Q of eating states is %.2f' % qsummary.avg_Q_eating_states)
 
     print('Average Q of one away from eating states is %.2f' % qsummary.avg_Q_one_away_eating_states)
@@ -118,9 +125,21 @@ class Oracle:
       avg_length_of_dead_snakes = 0
 
     try:
+      avg_length_of_dead_random_snakes = sum(self.board.lengths_of_dead_random_snakes) / len(
+        self.board.lengths_of_dead_random_snakes)
+    except ZeroDivisionError:
+      avg_length_of_dead_random_snakes = 0
+
+    try:
       avg_Q_of_dead_snakes = sum(self.board.total_Q_of_dead_snakes) / len(self.board.total_Q_of_dead_snakes)
     except ZeroDivisionError:
       avg_Q_of_dead_snakes = 0
+
+    try:
+      avg_Q_of_dead_random_snakes = sum(self.board.total_Q_of_dead_random_snakes) / len(
+        self.board.total_Q_of_dead_random_snakes)
+    except ZeroDivisionError:
+      avg_Q_of_dead_random_snakes = 0
 
     # Iterate over the keys of the Oracle (the states that the Oracle has seen)
     # and pick out the states associated with eating and not eating fruit.
@@ -168,6 +187,7 @@ class Oracle:
       avg_Q = 0
 
     qsummary = QSummary(num_states, reached_states_ratio, avg_length_of_dead_snakes, avg_Q_of_dead_snakes,
+                        avg_length_of_dead_random_snakes, avg_Q_of_dead_random_snakes,
                         avg_Q_eating_states, avg_Q_one_away_eating_states, avg_Q_two_away_eating_states,
                         avg_Q_no_eating_states, avg_Q)
 
