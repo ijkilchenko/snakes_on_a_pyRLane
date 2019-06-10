@@ -49,11 +49,11 @@ class Oracle:
   init_state_weight = lambda _: np.random.normal()
 
   reward_at_death = -10  # There is no reward after death :)
-  reward_when_eating_fruit = 100
+  reward_when_eating_fruit = 10
   reward_for_staying_alive = 0
 
-  alpha = 0.1  # Learning rate
-  gamma = 0.2  # Discount factor
+  alpha = 0.15  # Learning rate
+  gamma = 0.85  # Discount factor
 
   def __init__(self, board):
     self.board = board
@@ -197,6 +197,8 @@ class Oracle:
           next_Q_val = self.Q[next_state]
         except KeyError:  # If we've never actually seen this state before.
           next_Q_val = self.init_state_weight()
+          if move[-1] == 1:
+            next_Q_val = self.reward_when_eating_fruit
           self.Q[next_state] = next_Q_val
 
         if next_Q_val > max_Q_val_over_moves:

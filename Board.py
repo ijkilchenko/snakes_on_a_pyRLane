@@ -246,7 +246,7 @@ class Snake:
   symbol_body = '*'  # Each piece of the snake is marked as such (except the head)
   symbol_head = '&'
 
-  landscape_length = 3  # Always make it odd to be able to center the snake's head
+  landscape_length = 7  # Always make it odd to be able to center the snake's head
 
   def __init__(self, board):
     self.is_random = board.are_snakes_random
@@ -405,6 +405,8 @@ class Snake:
         return
 
       new_x, new_y, action = moves[move_index]
+      if np.random.uniform(0, 1) < 1/np.log(self.board.frame):
+        new_x, new_y, action = moves[np.random.randint(0, len(moves))]
       self.last_small_square = small_square  # Last state
       self.last_relative_move = relative_moves[move_index]  # Last Q-learning move
 

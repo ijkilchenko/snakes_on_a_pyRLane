@@ -1,6 +1,5 @@
 import pickle
 import matplotlib
-
 matplotlib.use('TkAgg')  # Fixes "RuntimeError: Python is not installed as a framework."
 import matplotlib.pyplot as plt
 from Board import Board
@@ -9,7 +8,7 @@ if __name__ == '__main__':
   # NOTE: make sure that Board is initialized the same in `teach_snakes.py`
   board = Board(30, 10, are_snakes_random=False, are_snakes_learning=True)
 
-  num_frames = 10 ** 5
+  num_frames = 10 ** 4
 
   board.oracle._print_Q_summary_snapshot()
 
@@ -48,24 +47,52 @@ if __name__ == '__main__':
   plt.xlabel('Frames (100\'s)')
   plt.ylabel('N')
 
-  color = 'tab:red'
+  color = 'red'
   ax1.set_xlabel('Frames (100\'s)')
   ax1.set_ylabel('Num of States Reached', color=color)
-  ax1.plot(t, num_states, color=color)
+  ax1.plot(t, num_states, color=color, label='Num of States Reached')
   ax1.tick_params(axis='y', labelcolor=color)
+
+  plt.legend()
 
   ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 
-  color = 'tab:green'
+  color = 'green'
   ax2.set_ylabel('Q', color=color)  # we already handled the x-label with ax1
   ax2.plot(t, avg_Q_eating_states, color=color, label='Eating states')
-  ax2.plot(t, avg_Q_one_away_eating_states, color='tab:blue', label='One away from eating')
-  ax2.plot(t, avg_Q_two_away_eating_states, color='tab:cyan', label='Two away from eating')
+  ax2.plot(t, avg_Q_one_away_eating_states, color='blue', label='One away from eating')
+  ax2.plot(t, avg_Q_two_away_eating_states, color='cyan', label='Two away from eating')
+  ax2.plot(t, avg_Q_no_eating_states, color='magenta', label='No eating states')
+  ax2.plot(t, avg_Q, color='yellow', label='Average Q')
   ax2.tick_params(axis='y', labelcolor=color)
 
   plt.legend()
 
   plt.savefig('data/Q_convergence_summary.png')
+
+  fig, ax1 = plt.subplots()
+
+  plt.xlabel('Frames (100\'s)')
+  plt.ylabel('N')
+
+  color = 'red'
+  ax1.set_xlabel('Frames (100\'s)')
+  ax1.set_ylabel('Average length of dead snakes', color=color)
+  ax1.plot(t, avg_length_of_dead_snakes, color=color, label='Average length of dead snakes')
+  ax1.tick_params(axis='y', labelcolor=color)
+
+  plt.legend()
+
+  ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+  color = 'green'
+  ax2.set_ylabel('Q', color=color)  # we already handled the x-label with ax1
+  ax2.plot(t, avg_Q_of_dead_snakes, color=color, label='Average Q of dead snakes')
+  ax2.tick_params(axis='y', labelcolor=color)
+
+  plt.legend()
+
+  plt.savefig('data/snakes_convergence_summary.png')
 
   board.oracle._print_Q_summary_snapshot()
 
