@@ -6,7 +6,7 @@ class QSummary:
   def __init__(self, num_states, reached_states_ratio, avg_length_of_dead_snakes, avg_Q_of_dead_snakes,
                avg_length_of_dead_random_snakes, avg_Q_of_dead_random_snakes,
                avg_Q_eating_states, avg_Q_one_away_eating_states, avg_Q_two_away_eating_states, avg_Q_no_eating_states,
-               avg_Q):
+               avg_Q, num_visits_to_num_states):
     self.num_states = num_states
     self.reached_states_ratio = reached_states_ratio
     self.avg_length_of_dead_snakes = avg_length_of_dead_snakes
@@ -18,6 +18,7 @@ class QSummary:
     self.avg_Q_two_away_eating_states = avg_Q_two_away_eating_states
     self.avg_Q_no_eating_states = avg_Q_no_eating_states
     self.avg_Q = avg_Q
+    self.num_visits_to_num_states = num_visits_to_num_states
 
 
 class Oracle:
@@ -143,7 +144,13 @@ class Oracle:
     # Iterate over the keys of the Oracle (the states that the Oracle has seen)
     # and pick out the states associated with eating and not eating fruit.
     # State contains the action in the last slot (-1 in Python).
-    eating_states = [v for v in self.Q if v[1][-1] == 1]
+    no_fruit_Q = []
+    eating_states = []
+    for v in self.Q:
+      if v[1][-1] == 1:
+        eating_states.append(v)
+      else:
+        no_fruit_Q.append(self.Q[v])
     eat_fruit_Q = [self.Q[v] for v in eating_states]
 
     try:
@@ -171,10 +178,6 @@ class Oracle:
     except ZeroDivisionError:
       avg_Q_two_away_eating_states = 0
 
-    no_fruit_Q = [self.Q[v] for v in self.Q if v[1][-1] == 0]
-    # TODO: it would be interesting to see the values of the states adjacent to the ones
-    # associated with eating fruit.
-
     try:
       avg_Q_no_eating_states = sum(no_fruit_Q) / len(no_fruit_Q)
     except ZeroDivisionError:
@@ -185,15 +188,18 @@ class Oracle:
     except ZeroDivisionError:
       avg_Q = 0
 
+    num_visits_to_num_states = defaultdict(lambda : 0)
+    for state in self.F:
+      num_visits_to_num_states[self.F[state]] += 1
+
     qsummary = QSummary(num_states, reached_states_ratio, avg_length_of_dead_snakes, avg_Q_of_dead_snakes,
                         avg_length_of_dead_random_snakes, avg_Q_of_dead_random_snakes,
                         avg_Q_eating_states, avg_Q_one_away_eating_states, avg_Q_two_away_eating_states,
-                        avg_Q_no_eating_states, avg_Q)
+                        avg_Q_no_eating_states, avg_Q, num_visits_to_num_states)
 
     return qsummary
 
   def consult(self, small_square, moves, snake):
-    # TODO: This function is likely to have q-learning related bugs.
     # Each move in moves is a triple (delta_x, delta_y, action) where
     # action tells us whether the move to (delta_x, delta_y) leads us to a fruit (if action is 1).
 

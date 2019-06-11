@@ -32,8 +32,7 @@ class Board:
 
     self.frame = 0  # Keeps track of the number of frames passed
 
-    # TODO: Play around with reward values, maybe need different numbers for better training.
-    self.reward_at_death = reward_at_death  # There is no reward after death :)
+    self.reward_at_death = reward_at_death
     self.reward_when_eating_fruit = reward_when_eating_fruit
     self.reward_for_staying_alive = reward_for_staying_alive
 
@@ -114,13 +113,10 @@ class Board:
     """This function moves each object a frame forward. This function advances time.
     """
 
-    # TODO: Does this implementation detail break something?
     # Let's update the ticks of snakes in a random order (so no one snake always moves first)
     for snake in sorted(self.snakes, key=lambda x: np.random.uniform(0, 1)):
       snake.tick()
-      self._self_check()
 
-    # TODO: Does this implementation detail break something?
     # Let's update the fruit in a totally random fashion
     if len(self.snakes) > 0:
       # We want to keep about twice as many fruit on the screen as there are snakes
@@ -128,24 +124,17 @@ class Board:
         # Don't want to change things too much, so only do this action every 5 frames
         if self.frame % 5 == 0:
           Fruit(self)  # New fruit
-          self._self_check()
       # Otherwise, let's randomly kill fruit or plant new fruit
       else:
-        self._self_check()
         if self.frame % 10 == 0:  # Every 10 frames
           if np.random.uniform(0, 1) < 0.5:  # Killing a fruit
-            self._self_check()
             i = np.random.randint(0, len(self.fruits))  # Pick a random fruit.
             fruit = self.fruits[list(self.fruits.keys())[i]]
             fruit.die()  # Die fruit die!
-            self._self_check()
           else:  # Planting a new fruit.
             Fruit(self)
-            self._self_check()
-    self._self_check()
     if self.initial_num_snakes > len(self.snakes):
       self.snakes.append(Snake(self))
-    self._self_check()
 
     self.frame += 1  # Update keeping track of time.
 
@@ -191,7 +180,6 @@ class Fruit:
 
 
 class Snake:
-  # TODO: clean up all the _self_check()'s
   """The snake is not the agent that learns, that's the Oracle.
   The snake is more like a puppet of the Oracle.
 
@@ -300,7 +288,6 @@ class Snake:
     elif y + landscape_length >= len(points):
       legal_landscape_length = min(legal_landscape_length, len(points) - y)
 
-    # TODO: Does this implementation detail break anything?
     # Handle borders and corners (the small square just becomes smaller).
     left = x - legal_landscape_length
     right = x + legal_landscape_length
@@ -346,8 +333,6 @@ class Snake:
       self.board.print()
       raise e
 
-    self.board._self_check()
-
     if action == 0:  # 0 indicates that we do not eat anything.
       # We are moving the snake up...
       tail = self.dots[0]
@@ -362,7 +347,6 @@ class Snake:
       self.dots = self.dots[1:]  # TODO: Possibly something to optimize.
       head = self.dots[-1]
       self.board.points[head[0]][head[1]] = self.symbol_head  # Update symbol_head on board
-      self.board._self_check()
     elif action == 1:  # 1 indicates that we are eating a fruit.
       # We are prepared to eat the fruit at the new point.
       length_before_eating = len(self.dots)
@@ -372,17 +356,14 @@ class Snake:
 
       # Grow our snake into this point.
       head = self.dots[-1]
-      self.board._self_check()
       self.board.points[head[0]][head[1]] = self.symbol_body
       self.dots.append((new_x, new_y))
       head = self.dots[-1]
       self.board.points[head[0]][head[1]] = self.symbol_head
-      self.board._self_check()
 
       length_after_eating = len(self.dots)
 
       assert length_after_eating > length_before_eating
-      self.board._self_check()
 
   def tick(self):
     """Calling this method essentially advances the snake into the future.
@@ -390,7 +371,6 @@ class Snake:
 
     moves, relative_moves = self.find_moves()
 
-    self.board._self_check()
     # Random snakes move randomly (this was used in testing).
     # NOTE: only calling oracle.consult updates the Q-function.
     if self.is_random:
@@ -419,9 +399,7 @@ class Snake:
       self.last_small_square = small_square  # Last state
       self.last_relative_move = relative_moves[move_index]  # Last Q-learning move
 
-    self.board._self_check()
     self.move(new_x, new_y, action)
-    self.board._self_check()
 
   def die(self):
     if self.is_random:

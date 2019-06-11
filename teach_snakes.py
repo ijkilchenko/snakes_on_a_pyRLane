@@ -7,7 +7,7 @@ from Board import Board
 from itertools import product
 
 
-def teach_snakes(board, num_frames):
+def teach_snakes(board, num_frames, hparam):
   board.oracle._print_Q_summary_snapshot()
 
   num_states = []
@@ -21,6 +21,7 @@ def teach_snakes(board, num_frames):
   avg_Q_two_away_eating_states = []
   avg_Q_no_eating_states = []
   avg_Q = []
+  num_visits_to_num_states = {}
 
   try:
     for i in range(num_frames):
@@ -37,6 +38,7 @@ def teach_snakes(board, num_frames):
         avg_Q_two_away_eating_states.append(qsummary.avg_Q_two_away_eating_states)
         avg_Q_no_eating_states.append(qsummary.avg_Q_no_eating_states)
         avg_Q.append(qsummary.avg_Q)
+        num_visits_to_num_states = qsummary.num_visits_to_num_states
 
       board.tick()
   except KeyboardInterrupt:
@@ -70,7 +72,7 @@ def teach_snakes(board, num_frames):
 
   plt.legend(loc=2)
 
-  plt.savefig('data/Q_convergence_summary.png')
+  plt.savefig('data/Q_convergence_summary_%s.png' % hparam.__str__())
 
   fig, ax1 = plt.subplots()
 
@@ -96,7 +98,18 @@ def teach_snakes(board, num_frames):
 
   plt.legend(loc=2)
 
-  plt.savefig('data/snakes_convergence_summary.png')
+  plt.savefig('data/snakes_convergence_summary_%s.png' % hparam.__str__())
+
+  plt.clf()
+
+  num_visits_to_num_states = {k: v for k, v in num_visits_to_num_states.items() if k > 0}
+
+  x, y = zip(*sorted(zip(num_visits_to_num_states.keys(), num_visits_to_num_states.values()), key=lambda x: x[0]))
+
+  plt.plot(x, y)
+  plt.ylabel('Number of states')
+
+  plt.savefig('data/num_of_visits_summary_%s.png' % hparam.__str__())
 
   board.oracle._print_Q_summary_snapshot()
 
@@ -115,9 +128,9 @@ if __name__ == '__main__':
 
   hparams = list(product(snake_landscape_lengths, alphas, gammas))
 
-  num_frames = 10 ** 4
+  num_frames = 10 ** 7
 
-  for hparam in hparams[:1]:
+  for hparam in hparams:
     print(hparam)
     snake_landscape_length, alpha, gamma = hparam
     # NOTE: make sure that Board is initialized the same in `teach_snakes.py`
@@ -126,5 +139,5 @@ if __name__ == '__main__':
                   reward_when_eating_fruit=reward_when_eating_fruit, reward_for_staying_alive=reward_for_staying_alive,
                   alpha=alpha, gamma=gamma)
 
-    teach_snakes(board, num_frames)
+    teach_snakes(board, num_frames, hparam)
     print()
