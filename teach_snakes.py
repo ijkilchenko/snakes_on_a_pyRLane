@@ -116,6 +116,8 @@ def teach_snakes(board, num_frames, hparam):
   with open('data/model.p', 'wb') as model_file:
     pickle.dump(board.oracle.Q, model_file)
 
+  plt.close('all')
+
 
 if __name__ == '__main__':
   reward_at_death = -10
@@ -128,7 +130,7 @@ if __name__ == '__main__':
 
   hparams = list(product(snake_landscape_lengths, alphas, gammas))
 
-  num_frames = 10 ** 7
+  num_frames = 10 ** 4
 
   for hparam in hparams:
     print(hparam)

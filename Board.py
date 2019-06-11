@@ -381,9 +381,18 @@ class Snake:
       new_x, new_y, action = moves[np.random.randint(0, len(moves))]
 
     else:  # Non-random snakes consult the Oracle.
-      # TODO: Should the small square be rotated so that the previous
-      # move always points to the top of the small square?
       small_square = self.get_small_square()  # This is the current landscape
+
+      if self.last_relative_move[:2] == (0, 1) or self.last_relative_move[:2] == (0, 0):  # Moved up or just started
+        pass
+      elif self.last_relative_move[:2] == (0, -1):  # Moved down
+        small_square = np.flip(small_square, axis=0)
+      elif self.last_relative_move[:2] == (1, 0):  # Moved right
+        small_square = np.rot90(small_square, axes=(0, 1))
+      elif self.last_relative_move[:2] == (-1, 0):  # Moved left
+        small_square = np.rot90(small_square, axes=(1, 0))
+      else:
+        raise Exception('Cannot match last_relative_move to an isometry!')
 
       # Gives back the Oracle's pick from the legal moves
       # or None if the snake is destined to die.
@@ -394,6 +403,8 @@ class Snake:
         return
 
       new_x, new_y, action = moves[move_index]
+
+      # Epsilon greedy
       if np.random.uniform(0, 1) < 1 / np.log(self.board.frame):
         new_x, new_y, action = moves[np.random.randint(0, len(moves))]
       self.last_small_square = small_square  # Last state

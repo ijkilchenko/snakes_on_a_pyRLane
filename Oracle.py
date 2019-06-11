@@ -188,7 +188,7 @@ class Oracle:
     except ZeroDivisionError:
       avg_Q = 0
 
-    num_visits_to_num_states = defaultdict(lambda : 0)
+    num_visits_to_num_states = defaultdict(lambda: 0)
     for state in self.F:
       num_visits_to_num_states[self.F[state]] += 1
 
