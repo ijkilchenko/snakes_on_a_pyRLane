@@ -124,9 +124,9 @@ if __name__ == '__main__':
   reward_when_eating_fruit = 10
   reward_for_staying_alive = 0
 
+  snake_landscape_lengths = [7, 3, 5]
   alphas = [0.15, 0.015, 0.5, 0.9]
   gammas = [0.85, 0.1, 0.5, 0.75, 0.95]
-  snake_landscape_lengths = [7, 3, 5]
 
   hparams = list(product(snake_landscape_lengths, alphas, gammas))
 

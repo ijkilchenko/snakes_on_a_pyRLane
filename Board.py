@@ -238,7 +238,6 @@ class Snake:
   recentering, and then doing a rotation. By including rotations, we can reduce the
   size of the state space by 75% (this will make it look like the snake always just
   moved up).
-  # TODO: implement these rotations.
   """
 
   symbol_body = '*'  # Each piece of the snake is marked as such (except the head)
