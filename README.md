@@ -2,9 +2,9 @@
 Watch snakes on a plane learn to eat fruit and avoid each other using Reinforcement Learning (Q-learning).
 
 ## Setup
-We use [keyboard](https://pypi.org/project/keyboard/) to rewind, pause/unpause, and fastforward. Unfortunately, it requires the use of root. 
+We use [pynput](https://pypi.org/project/pynput/) to handle keyboard controls for rewinding, pausing/unpausing, and fastforwarding. This library doesn't require root privileges.
 
-`pip install keyboard` to install the module. 
+`pip install -r requirements.txt` to install all required modules.
 
 ## Project structure
 We have a `Board.py` file which holds the implementation for the `Board`, `Fruit`, and `Snake` (and also a `Reprinter` which helps us display the game within a console). 
@@ -18,7 +18,7 @@ There are two final scripts:
 
 Each of the above scripts uses the same model file `models/model.p` (it's created if it doesn't exist). 
 
-You can do `sudo python watch_snakes.py` (note the use of root) right away without training just to see them move around or
+You can do `python watch_snakes.py` right away without training just to see them move around or
 do `python teach_snakes.py` and either wait until training is done (`num_frames` is exhausted) or do
 Ctrl+C (KeyboardInterrupt) and this will trigger the current model to be pickled/saved. 
 

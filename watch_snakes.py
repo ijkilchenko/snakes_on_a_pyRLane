@@ -1,18 +1,14 @@
 import time
 import pickle
-import keyboard
+from pynput import keyboard
 from Board import Board
 
 
 class Controller:
   """Controls the board. You can rewind, pause/unpause, and fastforward the board
-  using keys j, k, l, respectively. """
+  using keys j, k, and l, respectively. """
 
   def __init__(self, board, num_frames, delay):
-    self.hook = keyboard.on_press_key('k', self.pause)
-    keyboard.on_press_key('j', self.rewind)
-    keyboard.on_press_key('l', self.fastforward)
-
     self.board = board
     self.num_frames = num_frames
     self.delay = delay
@@ -21,10 +17,38 @@ class Controller:
     self.drawings = []
 
     self.is_paused = False
+    
+    # Set up keyboard listener
+    self.listener = keyboard.Listener(
+        on_press=self.on_press,
+        on_release=self.on_release)
+    self.listener.start()
+    
     self.forward()
 
+  def on_press(self, key):
+    try:
+      if key.char == 'k':
+        if self.is_paused:
+          self.resume()
+        else:
+          self.pause()
+      elif key.char == 'j':
+        self.rewind()
+      elif key.char == 'l':
+        self.fastforward()
+      elif key.char == 'q':
+        print("\nQuitting...")
+        self.listener.stop()
+        raise KeyboardInterrupt
+    except AttributeError:
+      pass
+
+  def on_release(self, key):
+    pass
+
   def forward(self):
-    while True or len(self.drawings) > self.num_frames:
+    while True and len(self.drawings) <= self.num_frames:
       if not self.is_paused:
         drawing = self.board.get_drawing()
         self.drawings.append(drawing)
@@ -36,36 +60,32 @@ class Controller:
         self.board.tick()
         time.sleep(self.delay)
 
-  def resume(self, *args):
-    keyboard.unhook(self.hook)
-    self.hook = keyboard.on_press_key('k', self.pause)
+  def resume(self):
+    if self.is_paused:
+      print("\nResuming playback...")
+      self.is_paused = False
 
-    self.is_paused = False
+  def pause(self):
+    if not self.is_paused:
+      print("\nPaused. Press 'k' to resume, 'j' to rewind, 'l' to fast forward, 'q' to quit")
+      self.is_paused = True
 
-  def pause(self, *args):
-    keyboard.unhook(self.hook)
-    self.hook = keyboard.on_press_key('k', self.resume)
+  def rewind(self):
+    if len(self.drawings) == 0:
+      print("\nNo previous states to rewind to")
+      return
 
-    self.is_paused = True
-
-  def rewind(self, *args):
-    self.last_drawing_index += -1
-
-    try:
-      self.board.print_drawing(self.drawings[self.last_drawing_index])
-    except IndexError:
-      self.last_drawing_index = 0
-
+    self.last_drawing_index = max(0, self.last_drawing_index - 1)
+    self.board.print_drawing(self.drawings[self.last_drawing_index])
     self.pause()
 
-  def fastforward(self, *args):
-    self.last_drawing_index += 1
+  def fastforward(self):
+    if self.last_drawing_index >= len(self.drawings) - 1:
+      print("\nNo future states to fast forward to")
+      return
 
-    try:
-      self.board.print_drawing(self.drawings[self.last_drawing_index])
-    except IndexError:
-      self.last_drawing_index = len(self.drawings)
-
+    self.last_drawing_index = min(len(self.drawings) - 1, self.last_drawing_index + 1)
+    self.board.print_drawing(self.drawings[self.last_drawing_index])
     self.pause()
 
 
@@ -84,6 +104,13 @@ if __name__ == '__main__':
   delay = 0.05
 
   board.oracle._print_Q_summary_snapshot()
+
+  print("\nControls:")
+  print("j - Rewind")
+  print("k - Pause/Resume")
+  print("l - Fast Forward")
+  print("q - Quit")
+  print("\nStarting playback...")
 
   try:
     controller = Controller(board, num_frames, delay)
